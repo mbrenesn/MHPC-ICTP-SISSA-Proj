@@ -53,12 +53,7 @@ unsigned long long int Hamiltonian::binary_to_int(boost::dynamic_bitset<> bs, un
 void Hamiltonian::construct_hamiltonian_matrix(unsigned long long int* int_basis, 
         double V, double t, unsigned int l, unsigned int n)
 {
-
-  // For this Hamiltonian the elements of the diagonal are set to V
-  for(unsigned int ii = 0; ii < basis_size_; ++ii)
-    for(unsigned int jj = 0; jj < basis_size_; ++jj)
-      if(ii == jj) hamiltonian_matrix[ii * basis_size_ + jj] = V;
-    
+  // Off-diagonal elements: the 't' terms
   // Grab 1 of the states and turn it into bit representation
   for(unsigned int state = 0; state < basis_size_; ++state){
     
@@ -75,6 +70,8 @@ void Hamiltonian::construct_hamiltonian_matrix(unsigned long long int* int_basis
 
         // If there's a particle in next site, do nothing
         if(bitset[next_site1] == 1){
+          // Accumulate 'V' terms
+          hamiltonian_matrix[state * basis_size_ + state] += V;
           continue;
         }
         // Otherwise do a swap
@@ -86,7 +83,7 @@ void Hamiltonian::construct_hamiltonian_matrix(unsigned long long int* int_basis
           // Loop over all states and look for a match
           for(unsigned int i = 0; i < basis_size_; ++i){
             if(new_int1 == int_basis[i]){
-              hamiltonian_matrix[i * basis_size_ + state] = t;
+              hamiltonian_matrix[i * basis_size_ + state] += t;
               break;
             }
           }
@@ -105,7 +102,7 @@ void Hamiltonian::construct_hamiltonian_matrix(unsigned long long int* int_basis
           // Loop over all states and look for a match
           for(unsigned int j = 0; j < basis_size_; ++j){
             if(new_int0 == int_basis[j]){
-              hamiltonian_matrix[j * basis_size_ + state] = t;
+              hamiltonian_matrix[j * basis_size_ + state] += t;
               break;
             }
           }
