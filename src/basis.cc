@@ -46,7 +46,7 @@ unsigned long long int Basis::smallest_int()
 {
   unsigned long long int smallest = 0;
   for(unsigned int i = 0; i < this->n_; ++i){
-    smallest += pow(2, i);
+    smallest += 1 << i;
   }
 
   return smallest;
