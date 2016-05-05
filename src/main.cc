@@ -37,14 +37,14 @@ int main()
   hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
 
   // This is a 1D array representation of the matrix, [][] is overloaded so you can
-  // access the elements with the [] operator
+  // access the elements with the [] operator, () is a 'BETTER' choice.
   for(int i=0;i<basis.basis_size();++i){
     for(int j=0;j<basis.basis_size();++j){
-      std::cout << " " << hamiltonian[i][j];
+      std::cout << " " << hamiltonian(i,j);
     }
     std::cout << std::endl;
   }
-  
+
   delete [] int_basis;
   delete [] bit_basis;
   return 0;

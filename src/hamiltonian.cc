@@ -1,5 +1,8 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
+#include <vector>
+#include <stdexcept>
+
 #include "hamiltonian.h"
 
 Hamiltonian::Hamiltonian(unsigned long long int basis_size)
@@ -19,21 +22,68 @@ Hamiltonian::~Hamiltonian()
 }
 
 /*******************************************************************************/
+// Copy constructor
+/*******************************************************************************/
+Hamiltonian::Hamiltonian(const Hamiltonian &rhs)
+{
+  std::cout << "Invoking c constructor" << std::endl;
+  basis_size_ = rhs.basis_size_;
+  hamiltonian_matrix = new double[basis_size_ * basis_size_];
+  for(unsigned int i = 0; i < basis_size_; ++i)
+    for(unsigned int j = 0; j < basis_size_; ++j)
+      hamiltonian_matrix[i * basis_size_ + j] = 
+          rhs.hamiltonian_matrix[i * basis_size_ + j]; 
+}
+
+/*******************************************************************************/
+// Assignment operator
+/*******************************************************************************/
+Hamiltonian &Hamiltonian::operator=(const Hamiltonian &rhs)
+{
+  delete [] hamiltonian_matrix;
+  basis_size_ = rhs.basis_size_;
+  hamiltonian_matrix = new double[basis_size_ * basis_size_];
+  
+  std::cout << "Invoking = op" << std::endl;
+  for(unsigned int i = 0; i < basis_size_; ++i)
+    for(unsigned int j = 0; j < basis_size_; ++j)
+      hamiltonian_matrix[i * basis_size_ + j] = 
+          rhs.hamiltonian_matrix[i * basis_size_ + j]; 
+
+  return *this;
+}
+
+/*******************************************************************************/
 // Operator [] overloading
 /*******************************************************************************/
 double* Hamiltonian::operator[](int i)
 {
-  if(i > this->basis_size_){
+  if(i >= basis_size_){
     std::cout << "Index out of bounds" << std::endl;
+    throw std::out_of_range("Matrix index is out of bounds");
   }
 
   return hamiltonian_matrix + i * basis_size_;
 }
 
 /*******************************************************************************/
+// Operator () overloading
+/*******************************************************************************/
+double& Hamiltonian::operator()(int i, int j)
+{
+  if(i >= basis_size_ || j >= basis_size_){
+    std::cout << "Index out of bounds" << std::endl;
+    throw std::out_of_range("Matrix index is out of bounds");
+  }
+
+  return hamiltonian_matrix[i * basis_size_ + j];
+}
+
+/*******************************************************************************/
 // I fear that the method .to_ulong() of dynamic bitset may overflow, let's 
 // do it the slow way to begin with and look for a better option later
 /*******************************************************************************/
+inline
 unsigned long long int Hamiltonian::binary_to_int(boost::dynamic_bitset<> bs, unsigned int l)
 {
   unsigned long long integer = 0;
