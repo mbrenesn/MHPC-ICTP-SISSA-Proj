@@ -1,6 +1,5 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
-#include <vector>
 #include <stdexcept>
 
 #include "hamiltonian.h"
@@ -26,7 +25,6 @@ Hamiltonian::~Hamiltonian()
 /*******************************************************************************/
 Hamiltonian::Hamiltonian(const Hamiltonian &rhs)
 {
-  std::cout << "Invoking c constructor" << std::endl;
   basis_size_ = rhs.basis_size_;
   hamiltonian_matrix = new double[basis_size_ * basis_size_];
   for(unsigned int i = 0; i < basis_size_; ++i)
@@ -44,7 +42,6 @@ Hamiltonian &Hamiltonian::operator=(const Hamiltonian &rhs)
   basis_size_ = rhs.basis_size_;
   hamiltonian_matrix = new double[basis_size_ * basis_size_];
   
-  std::cout << "Invoking = op" << std::endl;
   for(unsigned int i = 0; i < basis_size_; ++i)
     for(unsigned int j = 0; j < basis_size_; ++j)
       hamiltonian_matrix[i * basis_size_ + j] = 
