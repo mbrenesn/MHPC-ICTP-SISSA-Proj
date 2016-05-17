@@ -5,7 +5,7 @@ LDFLAGS=
 
 all: main.x
 
-main.x: basis.o hamiltonian.o main.o
+main.x: basis.o hamiltonian.o sparse_hamiltonian.o main.o
 	$(LD) $(LDFLAGS) $^ -o $@
 
 main.o: main.cc
