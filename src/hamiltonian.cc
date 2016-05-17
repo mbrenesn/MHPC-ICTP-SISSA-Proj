@@ -76,10 +76,6 @@ double& Hamiltonian::operator()(int i, int j)
   return hamiltonian_matrix[i * basis_size_ + j];
 }
 
-/*******************************************************************************/
-// I fear that the method .to_ulong() of dynamic bitset may overflow, let's 
-// do it the slow way to begin with and look for a better option later
-/*******************************************************************************/
 inline
 unsigned long long int Hamiltonian::binary_to_int(boost::dynamic_bitset<> bs, unsigned int l)
 {
