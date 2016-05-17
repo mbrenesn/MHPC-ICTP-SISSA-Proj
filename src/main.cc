@@ -2,6 +2,7 @@
 
 #include "basis.h"
 #include "hamiltonian.h"
+#include "sparse_hamiltonian.h"
 
 int main()
 {
@@ -44,6 +45,13 @@ int main()
     }
     std::cout << std::endl;
   }
+
+  // Sparse hamiltonian testing zone
+  SparseHamiltonian sparse_hamiltonian(basis.basis_size());
+
+  sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
+
+  sparse_hamiltonian.print_hamiltonian();
 
   delete [] int_basis;
   delete [] bit_basis;
