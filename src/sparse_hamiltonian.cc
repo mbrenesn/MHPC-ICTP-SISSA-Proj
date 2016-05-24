@@ -221,7 +221,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
   // Declarations
   int mxrej = 10; double btol = 1.0e-7; double err_loc;
   double gamma = 0.9; double delta = 1.2;
-  unsigned int mb = m; double t_out = std::abs(tv);
+  unsigned int mb = m; double t_out = std::fabs(tv);
   int nstep = 0; int mx; double t_new = 0.0;
   double t_now = 0.0; double s_error = 0.0; double avnorm = 0.0;
 
@@ -236,6 +236,8 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
 
   // Boost declarations
   boost::numeric::ublas::vector<double> p(basis_size_), av_vec(basis_size_);
+  boost::numeric::ublas::compressed_matrix<double> v_m(basis_size_, m + 1, 0.0);
+  boost::numeric::ublas::compressed_matrix<double> h_m(m + 2, m + 2, 0.0);
   boost::numeric::ublas::vector<double> v_m_tmp1(basis_size_, 0.0), 
                                         v_m_tmp2(basis_size_, 0.0); 
   
@@ -244,9 +246,17 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
   while(t_now < t_out){
     nstep++;
     double t_step = std::min(t_out - t_now, t_new);
-    boost::numeric::ublas::matrix<double> v_m(basis_size_, m + 1, 0.0);
-    boost::numeric::ublas::matrix<double> h_m(m + 2, m + 2, 0.0);
 
+    // V_m and H_m need to be initialized to 0 each step
+    for(unsigned int iv = 0; iv < basis_size_; ++iv)
+      for(unsigned int jv = 0; jv < (m + 1); ++jv)
+        v_m(iv, jv) = 0.0;
+
+    for(unsigned int iv = 0; iv < (m + 2); ++iv)
+      for(unsigned int jv = 0; jv < (m + 2); ++jv)
+        h_m(iv, jv) = 0.0;
+
+    // First step of the iterative method
     for(unsigned int iv = 0; iv < basis_size_; ++iv) 
         v_m(iv,0) = (1.0 / beta) * w(iv);
 
@@ -271,7 +281,6 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
       h_m(j + 1, j) = s;
       for(unsigned int jv = 0; jv < basis_size_; ++jv)
         v_m(jv, j + 1) = (1.0 / s) * p(jv);
-
     }
 
     if(k1 != 0){
@@ -294,14 +303,13 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
       f = this->expm_pade(h_m_tmp * t_step * sgn, 6);
       f_copy = f;  
 
-
       if(k1 == 0){  
         err_loc = btol;
         break;
       }
       else{
-        double phi1 = std::abs(beta * f(m, 0));
-        double phi2 = std::abs(beta * f(m+1, 0) * avnorm);  
+        double phi1 = std::fabs(beta * f(m, 0));
+        double phi2 = std::fabs(beta * f(m+1, 0) * avnorm);  
 
         if(phi1 > (10 * phi2)){
           err_loc = phi2;
@@ -336,7 +344,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
 
     mx = mb + std::max(0, k1 - 1);
     boost::numeric::ublas::range r0(0, 0), r2(0, basis_size_), r3(0, mx);
-    boost::numeric::ublas::matrix<double> v_m_tmp3(basis_size_, mx);
+    boost::numeric::ublas::compressed_matrix<double> v_m_tmp3(basis_size_, mx);
     v_m_tmp3 = boost::numeric::ublas::project(v_m , r2, r3);    
     
     w = boost::numeric::ublas::prod(v_m_tmp3, 

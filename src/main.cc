@@ -51,7 +51,7 @@ int main()
 
   sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
 
-  //sparse_hamiltonian.print_hamiltonian();
+  sparse_hamiltonian.print_hamiltonian();
   
   boost::numeric::ublas::vector<double> w(basis.basis_size(), 0.0);
   boost::numeric::ublas::vector<double> v(basis.basis_size());
@@ -61,7 +61,7 @@ int main()
   boost::numeric::ublas::matrix<double> mat(basis.basis_size(), basis.basis_size(), 0.0);
   double tv = 1.0;
   double tol = 1.0e-06;
-  unsigned int m = 6;
+  unsigned int m = 30;
   double err, hump;
 
   sparse_hamiltonian.expv_krylov_solve(tv,w,err,hump,v,tol,m);
