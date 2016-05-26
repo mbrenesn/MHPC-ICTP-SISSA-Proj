@@ -12,7 +12,8 @@
 SparseHamiltonian::SparseHamiltonian(unsigned long long int basis_size)
 {
   basis_size_ = basis_size;
-  boost::numeric::ublas::compressed_matrix<double> loc_ham_mat(basis_size_, basis_size_, 0.0);
+  boost::numeric::ublas::compressed_matrix< std::complex<double> > loc_ham_mat(basis_size_, 
+          basis_size_, 0.0);
 
   this->ham_mat = loc_ham_mat;
 }
@@ -59,7 +60,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
         // If there's a particle in next site, do nothing
         if(bitset[next_site1] == 1){
           // Accumulate 'V' terms
-          ham_mat(state, state) += V;
+          ham_mat(state, state) += std::complex<double> (0.0, V);
           continue;
         }
         // Otherwise do a swap
@@ -71,7 +72,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
           // Loop over all states and look for a match
           for(unsigned int i = 0; i < basis_size_; ++i){
             if(new_int1 == int_basis[i]){
-              ham_mat(i, state) += t;
+              ham_mat(i, state) += std::complex<double> (0.0, t);
               break;
             }
           }
@@ -90,7 +91,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
           // Loop over all states and look for a match
           for(unsigned int j = 0; j < basis_size_; ++j){
             if(new_int0 == int_basis[j]){
-              ham_mat(j, state) += t;
+              ham_mat(j, state) += std::complex<double> (0.0, t);
               break;
             }
           }
@@ -126,10 +127,11 @@ double SparseHamiltonian::sign(double x)
 /*******************************************************************************/
 // Computes matrix exponential using the Padé aproximation
 /*******************************************************************************/
-boost::numeric::ublas::matrix<double>
-SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix<double> mat, unsigned int p)
+boost::numeric::ublas::matrix< std::complex<double> >
+SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix< std::complex<double> > mat, 
+        unsigned int p)
 {
-  boost::numeric::ublas::matrix<double> exp_mat(mat.size1(), mat.size2());
+  boost::numeric::ublas::matrix< std::complex<double> > exp_mat(mat.size1(), mat.size2());
  
   if(mat.size1() != mat.size2()){
     std::cerr << "Pade approx error: mat.size1 != mat.size2" << std::endl; 
@@ -137,7 +139,7 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix<double> mat, unsigned
   }
   
   unsigned int n = mat.size1();
-  boost::numeric::ublas::vector<double> c(p + 1);
+  boost::numeric::ublas::vector< std::complex<double> > c(p + 1);
   c(0) = 1.0;
   for(unsigned int k = 1; k <= p; ++k)
       c(k) = c(k - 1) * 
@@ -161,12 +163,12 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix<double> mat, unsigned
           mat(ii,jj) = std::pow(2, -s) * mat(ii,jj);
   }
 
-  boost::numeric::ublas::identity_matrix<double> identity(n, n);
-  boost::numeric::ublas::matrix<double> mat2(n, n);
+  boost::numeric::ublas::identity_matrix< std::complex<double> > identity(n, n);
+  boost::numeric::ublas::matrix< std::complex<double> > mat2(n, n);
   mat2 = boost::numeric::ublas::prod(mat, mat);
   
-  boost::numeric::ublas::matrix<double> q_mat(n, n);
-  boost::numeric::ublas::matrix<double> p_mat(n, n);
+  boost::numeric::ublas::matrix< std::complex<double> > q_mat(n, n);
+  boost::numeric::ublas::matrix< std::complex<double> > p_mat(n, n);
 
   q_mat.assign(c(p) * identity);
   p_mat.assign(c(p - 1) * identity);
@@ -212,8 +214,9 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix<double> mat, unsigned
 // Relies on the computation of the matrix exponential using Padé aproximation
 // for a smaller matrix
 /*******************************************************************************/
-void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vector<double> &w,
-        double &err, double &hump, boost::numeric::ublas::vector<double> &v, 
+void SparseHamiltonian::expv_krylov_solve(double tv, 
+        boost::numeric::ublas::vector< std::complex<double> > &w,
+        double &err, double &hump, boost::numeric::ublas::vector< std::complex<double> > &v, 
             double tol, unsigned int m)
 {
   double anorm = norm_inf(ham_mat);
@@ -235,11 +238,11 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
   double sgn = sign(tv);
 
   // Boost declarations
-  boost::numeric::ublas::vector<double> p(basis_size_), av_vec(basis_size_);
-  boost::numeric::ublas::compressed_matrix<double> v_m(basis_size_, m + 1, 0.0);
-  boost::numeric::ublas::compressed_matrix<double> h_m(m + 2, m + 2, 0.0);
-  boost::numeric::ublas::vector<double> v_m_tmp1(basis_size_, 0.0), 
-                                        v_m_tmp2(basis_size_, 0.0); 
+  boost::numeric::ublas::vector< std::complex<double> > p(basis_size_), av_vec(basis_size_);
+  boost::numeric::ublas::compressed_matrix< std::complex<double> > v_m(basis_size_, m + 1, 0.0);
+  boost::numeric::ublas::compressed_matrix< std::complex<double> > h_m(m + 2, m + 2, 0.0);
+  boost::numeric::ublas::vector< std::complex<double> > v_m_tmp1(basis_size_, 0.0), 
+                                                        v_m_tmp2(basis_size_, 0.0); 
   
   w = v;
   hump = normv;
@@ -291,11 +294,11 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
     }
 
     mx = mb + k1;
-    boost::numeric::ublas::matrix<double> f_copy(mx, mx, 0.0);
+    boost::numeric::ublas::matrix< std::complex<double> > f_copy(mx, mx, 0.0);
     unsigned int ireject = 0;
     while(ireject <= mxrej){
-      boost::numeric::ublas::matrix<double> h_m_tmp(mx, mx);
-      boost::numeric::ublas::matrix<double> f(mx, mx, 0.0);
+      boost::numeric::ublas::matrix< std::complex<double> > h_m_tmp(mx, mx);
+      boost::numeric::ublas::matrix< std::complex<double> > f(mx, mx, 0.0);
 
       boost::numeric::ublas::range r1(0, mx);
       h_m_tmp = boost::numeric::ublas::project(h_m, r1, r1);
@@ -308,8 +311,8 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
         break;
       }
       else{
-        double phi1 = std::fabs(beta * f(m, 0));
-        double phi2 = std::fabs(beta * f(m+1, 0) * avnorm);  
+        double phi1 = std::abs(beta * f(m, 0));
+        double phi2 = std::abs(beta * f(m+1, 0) * avnorm);  
 
         if(phi1 > (10 * phi2)){
           err_loc = phi2;
@@ -344,9 +347,9 @@ void SparseHamiltonian::expv_krylov_solve(double tv, boost::numeric::ublas::vect
 
     mx = mb + std::max(0, k1 - 1);
     boost::numeric::ublas::range r0(0, 0), r2(0, basis_size_), r3(0, mx);
-    boost::numeric::ublas::compressed_matrix<double> v_m_tmp3(basis_size_, mx);
+    boost::numeric::ublas::compressed_matrix< std::complex<double> > v_m_tmp3(basis_size_, mx);
     v_m_tmp3 = boost::numeric::ublas::project(v_m , r2, r3);    
-    
+   
     w = boost::numeric::ublas::prod(v_m_tmp3, 
             beta * boost::numeric::ublas::column(f_copy, 0));
 

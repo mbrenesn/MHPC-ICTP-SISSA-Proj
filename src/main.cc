@@ -53,12 +53,11 @@ int main()
 
   sparse_hamiltonian.print_hamiltonian();
   
-  boost::numeric::ublas::vector<double> w(basis.basis_size(), 0.0);
-  boost::numeric::ublas::vector<double> v(basis.basis_size());
+  boost::numeric::ublas::vector< std::complex<double> > w(basis.basis_size(), 0.0);
+  boost::numeric::ublas::vector< std::complex<double> > v(basis.basis_size());
 
   for(unsigned int i = 0; i < basis.basis_size(); ++i) v(i) = i + 1;
 
-  boost::numeric::ublas::matrix<double> mat(basis.basis_size(), basis.basis_size(), 0.0);
   double tv = 1.0;
   double tol = 1.0e-06;
   unsigned int m = 30;
