@@ -1,5 +1,4 @@
 #include <cmath>
-#include <boost/dynamic_bitset.hpp>
 #include "basis.h"
 
 Basis::Basis(unsigned int l, unsigned int n)
@@ -31,8 +30,8 @@ unsigned long long int Basis::basis_size()
 {
   
   double size = 1.0;
-  for(unsigned int i = 1; i <= (this->l_ - this->n_); ++i){
-    size *= (static_cast<double> (i + this->n_) / static_cast<double> (i));  
+  for(unsigned int i = 1; i <= (l_ - n_); ++i){
+    size *= (static_cast<double> (i + n_) / static_cast<double> (i));  
   }
 
   return floor(size + 0.5);
@@ -45,7 +44,7 @@ unsigned long long int Basis::basis_size()
 unsigned long long int Basis::smallest_int()
 {
   unsigned long long int smallest = 0;
-  for(unsigned int i = 0; i < this->n_; ++i){
+  for(unsigned int i = 0; i < n_; ++i){
     smallest += 1 << i;
   }
 
@@ -85,7 +84,7 @@ void Basis::construct_bit_basis(boost::dynamic_bitset<> *bit_basis,
         unsigned long long int *int_basis)
 {
   for(unsigned int i = 0; i < basis_size(); ++i){
-    boost::dynamic_bitset<> bs(this->l_, int_basis[i]);
+    boost::dynamic_bitset<> bs(l_, int_basis[i]);
     bit_basis[i] = bs;
   }
 }
