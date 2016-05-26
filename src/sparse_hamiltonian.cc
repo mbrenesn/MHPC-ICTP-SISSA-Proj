@@ -269,7 +269,8 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
 
       for(unsigned int i = 0; i <= j; ++i){
         v_m_tmp1 = boost::numeric::ublas::column(v_m, i);
-        h_m(i, j) = boost::numeric::ublas::inner_prod(v_m_tmp1, p);
+        h_m(i, j) = boost::numeric::ublas::inner_prod(
+                boost::numeric::ublas::conj(v_m_tmp1), p);
         p = p - h_m(i, j) * boost::numeric::ublas::column(v_m, i);
       }
       
