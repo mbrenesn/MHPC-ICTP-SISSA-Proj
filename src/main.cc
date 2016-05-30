@@ -1,8 +1,21 @@
 #include <iostream>
 
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include "basis.h"
 #include "hamiltonian.h"
 #include "sparse_hamiltonian.h"
+
+double seconds()
+{
+    //Returns the second elapsed since Epoch (00:00:00 UTC, January 1, 1970)
+    struct timeval tmp;
+    double sec;
+    gettimeofday( &tmp, (struct timezone *)0 );
+    sec = tmp.tv_sec + ((double)tmp.tv_usec)/1000000.0;
+    return sec;
+}
 
 int main()
 {
@@ -28,7 +41,7 @@ int main()
   
   std::cout << "Here's the basis in binary notation:" << std::endl;
   for(int i=0;i<basis.basis_size();++i) std::cout << bit_basis[i] << std::endl;
- 
+
   // Construction of the hamiltonian matrix, by calling the constructor
   // the object is the hamiltonian matrix itself
   Hamiltonian hamiltonian(basis.basis_size());
@@ -52,22 +65,29 @@ int main()
   sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
 
   sparse_hamiltonian.print_hamiltonian();
-  
+
   boost::numeric::ublas::vector< std::complex<double> > w(basis.basis_size(), 0.0);
   boost::numeric::ublas::vector< std::complex<double> > v(basis.basis_size());
 
-  for(unsigned int i = 0; i < basis.basis_size(); ++i) v(i) = i + 1;
+  for(unsigned int i = 0; i < basis.basis_size(); ++i) 
+      v(i) = std::complex<double>(i + 1, i + 1);
 
   double tv = 1.0;
   double tol = 1.0e-06;
   unsigned int m = 30;
   double err, hump;
 
+  double t1 = seconds();
+
   sparse_hamiltonian.expv_krylov_solve(tv,w,err,hump,v,tol,m);
   
+  double t2 = seconds();
+
   std::cout << w << std::endl;
   std::cout << err << std::endl;
   std::cout << hump << std::endl;
+
+  std::cout << "Time: " << t2 - t1 << " seconds" << std::endl;
 
   delete [] int_basis;
   delete [] bit_basis;

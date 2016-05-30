@@ -37,6 +37,30 @@ unsigned long long int SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> 
 }
 
 /*******************************************************************************/
+// Binary search: Divide and conquer. For the construction of the Hamiltonian
+// matrix instead of looking through all the elements of the int basis a
+// binary search will perform better for large systems
+/*******************************************************************************/
+unsigned long long int SparseHamiltonian::binsearch(const unsigned long long int *array, 
+        unsigned long long int len, unsigned long long int value)
+{
+  if(len == 0) return -1;
+  unsigned long long int mid = len / 2;
+
+  if(array[mid] == value) 
+    return mid;
+  else if(array[mid] < value){
+    unsigned long long int result = binsearch(array + mid + 1, len - (mid + 1), value);
+    if(result == -1) 
+      return -1;
+    else
+      return result + mid + 1;
+  }
+  else
+    return binsearch(array, mid, value);
+}
+
+/*******************************************************************************/
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
 void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int_basis, 
@@ -70,12 +94,13 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
 
           unsigned long long new_int1 = binary_to_int(bitset, l);
           // Loop over all states and look for a match
-          for(unsigned int i = 0; i < basis_size_; ++i){
-            if(new_int1 == int_basis[i]){
-              ham_mat(i, state) += std::complex<double> (0.0, t);
-              break;
-            }
-          }
+          unsigned long long int match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
+          if(match_ind1 == -1){
+            std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
+            exit(1);
+          } 
+          
+          ham_mat(match_ind1, state) += std::complex<double> (0.0, t);
         }
       }
       // Case 2: There's no particle in this site
@@ -89,12 +114,13 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
 
           unsigned long long new_int0 = binary_to_int(bitset, l);
           // Loop over all states and look for a match
-          for(unsigned int j = 0; j < basis_size_; ++j){
-            if(new_int0 == int_basis[j]){
-              ham_mat(j, state) += std::complex<double> (0.0, t);
-              break;
-            }
-          }
+          unsigned long long int match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
+          if(match_ind0 == -1){
+            std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
+            exit(1);
+          } 
+          
+          ham_mat(match_ind0, state) += std::complex<double> (0.0, t);
         }
         // Otherwise do nothing
         else{
