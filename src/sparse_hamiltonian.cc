@@ -183,7 +183,7 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix< std::complex<double>
 
   int s = 0;
   if(norm > 0.5){
-    s = std::max(0.0, floor(std::log10(s)/std::log10(2)) + 2);
+    s = std::max(0.0, floor(std::log10(norm)/std::log10(2)) + 2);
     for(unsigned int ii = 0; ii < n; ++ii)
       for(unsigned int jj = 0; jj < n; ++jj)
           mat(ii,jj) = std::pow(2, -s) * mat(ii,jj);
@@ -246,7 +246,6 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
             double tol, unsigned int m)
 {
   double anorm = norm_inf(ham_mat);
-
   // Declarations
   int mxrej = 10; double btol = 1.0e-7; double err_loc;
   double gamma = 0.9; double delta = 1.2;
@@ -299,7 +298,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
                 boost::numeric::ublas::conj(v_m_tmp1), p);
         p = p - h_m(i, j) * boost::numeric::ublas::column(v_m, i);
       }
-      
+    
       s = norm_2(p);
       if(s < btol){
         k1 = 0;
@@ -312,7 +311,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
       for(unsigned int jv = 0; jv < basis_size_; ++jv)
         v_m(jv, j + 1) = (1.0 / s) * p(jv);
     }
-
+    
     if(k1 != 0){
       h_m(m + 1, m) = 1.0;
       v_m_tmp2 = boost::numeric::ublas::column(v_m, m);
@@ -332,7 +331,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
 
       f = this->expm_pade(h_m_tmp * t_step * sgn, 6);
       f_copy = f;  
-
+      
       if(k1 == 0){  
         err_loc = btol;
         break;
