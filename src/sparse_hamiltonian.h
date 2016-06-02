@@ -14,10 +14,11 @@ class SparseHamiltonian
 {
   private:
     unsigned long long int basis_size_;
+    boost::numeric::ublas::compressed_matrix< std::complex<double> > ham_mat_;
   public:
-    SparseHamiltonian(unsigned long long int basis_size);
+    SparseHamiltonian(unsigned long long int basis_size,
+            boost::numeric::ublas::compressed_matrix< std::complex<double> > &ham_mat);
     ~SparseHamiltonian();
-    boost::numeric::ublas::compressed_matrix< std::complex<double> > ham_mat;
     boost::numeric::ublas::vector<double> w;
     inline unsigned long long int binary_to_int(boost::dynamic_bitset<> bs, unsigned int l);
     unsigned long long int binsearch(const unsigned long long int *array, 

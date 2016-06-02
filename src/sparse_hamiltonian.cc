@@ -7,15 +7,11 @@
 
 #include "sparse_hamiltonian.h"
 
-// TODO
-// Be careful with the copy!
-SparseHamiltonian::SparseHamiltonian(unsigned long long int basis_size)
+SparseHamiltonian::SparseHamiltonian(unsigned long long int basis_size, 
+        boost::numeric::ublas::compressed_matrix< std::complex<double> > &ham_mat)
 {
   basis_size_ = basis_size;
-  boost::numeric::ublas::compressed_matrix< std::complex<double> > loc_ham_mat(basis_size_, 
-          basis_size_, 0.0);
-
-  this->ham_mat = loc_ham_mat;
+  ham_mat_ = ham_mat;
 }
 
 SparseHamiltonian::~SparseHamiltonian()
@@ -84,7 +80,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
         // If there's a particle in next site, do nothing
         if(bitset[next_site1] == 1){
           // Accumulate 'V' terms
-          ham_mat(state, state) += std::complex<double> (0.0, V);
+          ham_mat_(state, state) += std::complex<double> (0.0, V);
           continue;
         }
         // Otherwise do a swap
@@ -100,7 +96,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
             exit(1);
           } 
           
-          ham_mat(match_ind1, state) += std::complex<double> (0.0, t);
+          ham_mat_(match_ind1, state) += std::complex<double> (0.0, t);
         }
       }
       // Case 2: There's no particle in this site
@@ -120,7 +116,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
             exit(1);
           } 
           
-          ham_mat(match_ind0, state) += std::complex<double> (0.0, t);
+          ham_mat_(match_ind0, state) += std::complex<double> (0.0, t);
         }
         // Otherwise do nothing
         else{
@@ -136,7 +132,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
 /*******************************************************************************/
 void SparseHamiltonian::print_hamiltonian()
 {
-  std::cout << ham_mat << std::endl;
+  std::cout << ham_mat_ << std::endl;
 }
 
 /*******************************************************************************/
@@ -245,7 +241,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
         double &err, double &hump, boost::numeric::ublas::vector< std::complex<double> > &v, 
             double tol, unsigned int m)
 {
-  double anorm = norm_inf(ham_mat);
+  double anorm = norm_inf(ham_mat_);
   // Declarations
   int mxrej = 10; double btol = 1.0e-7; double err_loc;
   double gamma = 0.9; double delta = 1.2;
@@ -289,7 +285,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
         v_m(iv,0) = (1.0 / beta) * w(iv);
 
     for(unsigned int j = 0; j < m; ++j){
-      p = boost::numeric::ublas::prod(ham_mat, 
+      p = boost::numeric::ublas::prod(ham_mat_, 
               boost::numeric::ublas::column(v_m, j));
 
       for(unsigned int i = 0; i <= j; ++i){
@@ -315,7 +311,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
     if(k1 != 0){
       h_m(m + 1, m) = 1.0;
       v_m_tmp2 = boost::numeric::ublas::column(v_m, m);
-      av_vec = boost::numeric::ublas::prod(ham_mat, v_m_tmp2);
+      av_vec = boost::numeric::ublas::prod(ham_mat_, v_m_tmp2);
       avnorm = norm_2(av_vec);
     }
 

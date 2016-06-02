@@ -60,7 +60,12 @@ int main()
   }
 
   // Sparse hamiltonian testing zone
-  SparseHamiltonian sparse_hamiltonian(basis.basis_size());
+  // The constructor requires an instance of the matrix container, which is a ublas
+  // compressed matrix at the moment
+  boost::numeric::ublas::compressed_matrix< std::complex<double> > 
+      ham_mat(basis.basis_size(), basis.basis_size(), 0.0);
+
+  SparseHamiltonian sparse_hamiltonian(basis.basis_size(), ham_mat);
 
   sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
 
@@ -87,8 +92,8 @@ int main()
   std::cout << err << std::endl;
   std::cout << hump << std::endl;
 
-  std::cout << "Time: " << t2 - t1 << " seconds" << std::endl;
-
+  std::cout << "Time: " << t2 - t1 << " seconds" << std::endl; 
+  
   delete [] int_basis;
   delete [] bit_basis;
   return 0;
