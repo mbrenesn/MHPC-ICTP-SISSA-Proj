@@ -37,7 +37,7 @@ unsigned long long int SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> 
 // matrix instead of looking through all the elements of the int basis a
 // binary search will perform better for large systems
 /*******************************************************************************/
-unsigned long long int SparseHamiltonian::binsearch(const unsigned long long int *array, 
+long long int SparseHamiltonian::binsearch(const unsigned long long int *array, 
         unsigned long long int len, unsigned long long int value)
 {
   if(len == 0) return -1;
@@ -46,7 +46,7 @@ unsigned long long int SparseHamiltonian::binsearch(const unsigned long long int
   if(array[mid] == value) 
     return mid;
   else if(array[mid] < value){
-    unsigned long long int result = binsearch(array + mid + 1, len - (mid + 1), value);
+    long long int result = binsearch(array + mid + 1, len - (mid + 1), value);
     if(result == -1) 
       return -1;
     else
@@ -90,7 +90,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
 
           unsigned long long new_int1 = binary_to_int(bitset, l);
           // Loop over all states and look for a match
-          unsigned long long int match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
+          long long int match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
           if(match_ind1 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);
@@ -110,7 +110,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int* int
 
           unsigned long long new_int0 = binary_to_int(bitset, l);
           // Loop over all states and look for a match
-          unsigned long long int match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
+          long long int match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
           if(match_ind0 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);
@@ -225,7 +225,7 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix< std::complex<double>
     (exp_mat.assign(   identity + 2.0 * boost::numeric::ublas::prod(mat2, p_mat))  );
 
   // Final result is squared
-  for(unsigned int j = 0; j < s; ++j)
+  for(int j = 0; j < s; ++j)
     exp_mat = boost::numeric::ublas::prod(exp_mat, exp_mat);
 
   return exp_mat;
@@ -318,7 +318,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
 
     mx = mb + k1;
     boost::numeric::ublas::matrix< std::complex<double> > f_copy(mx, mx, 0.0);
-    unsigned int ireject = 0;
+    int ireject = 0;
     while(ireject <= mxrej){
       boost::numeric::ublas::matrix< std::complex<double> > h_m_tmp(mx, mx);
       boost::numeric::ublas::matrix< std::complex<double> > f(mx, mx, 0.0);

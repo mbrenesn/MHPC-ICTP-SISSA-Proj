@@ -33,14 +33,14 @@ int main()
   std::cout << basis.basis_size() << std::endl;
 
   std::cout << "Here's the basis in int notation:" << std::endl;
-  for(int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
+  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
 
   boost::dynamic_bitset<> *bit_basis = 
       new boost::dynamic_bitset<>[basis.basis_size()];
   basis.construct_bit_basis(bit_basis, int_basis);
   
   std::cout << "Here's the basis in binary notation:" << std::endl;
-  for(int i=0;i<basis.basis_size();++i) std::cout << bit_basis[i] << std::endl;
+  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << bit_basis[i] << std::endl;
 
   // Construction of the hamiltonian matrix, by calling the constructor
   // the object is the hamiltonian matrix itself
@@ -52,8 +52,8 @@ int main()
 
   // This is a 1D array representation of the matrix, [][] is overloaded so you can
   // access the elements with the [] operator, () is a 'BETTER' choice.
-  for(int i=0;i<basis.basis_size();++i){
-    for(int j=0;j<basis.basis_size();++j){
+  for(unsigned int i=0;i<basis.basis_size();++i){
+    for(unsigned int j=0;j<basis.basis_size();++j){
       std::cout << " " << hamiltonian(i,j);
     }
     std::cout << std::endl;

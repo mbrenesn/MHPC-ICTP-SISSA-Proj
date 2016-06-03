@@ -21,7 +21,7 @@ class SparseHamiltonian
     ~SparseHamiltonian();
     boost::numeric::ublas::vector<double> w;
     inline unsigned long long int binary_to_int(boost::dynamic_bitset<> bs, unsigned int l);
-    unsigned long long int binsearch(const unsigned long long int *array, 
+    long long int binsearch(const unsigned long long int *array, 
             unsigned long long int len, unsigned long long int value);
     void construct_hamiltonian_matrix(unsigned long long int* int_basis, 
             double V, double t, unsigned int l, unsigned int n);
