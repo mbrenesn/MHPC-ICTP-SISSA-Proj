@@ -248,6 +248,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
   unsigned int mb = m; double t_out = std::fabs(tv);
   int nstep = 0; int mx; double t_new = 0.0;
   double t_now = 0.0; double s_error = 0.0; double avnorm = 0.0;
+  double rndoff = anorm * 2.2204e-16;
 
   // Precomputed values
   const double pi = boost::math::constants::pi<double>();
@@ -335,7 +336,7 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
       else{
         double phi1 = std::abs(beta * f(m, 0));
         double phi2 = std::abs(beta * f(m+1, 0) * avnorm);  
-
+        
         if(phi1 > (10 * phi2)){
           err_loc = phi2;
           xm = 1.0 / static_cast<double>(m);
@@ -370,10 +371,12 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
     mx = mb + std::max(0, k1 - 1);
     boost::numeric::ublas::range r0(0, 0), r2(0, basis_size_), r3(0, mx);
     boost::numeric::ublas::compressed_matrix< std::complex<double> > v_m_tmp3(basis_size_, mx);
+    boost::numeric::ublas::vector< std::complex<double> > f_column(mx);
     v_m_tmp3 = boost::numeric::ublas::project(v_m , r2, r3);    
+    f_column = boost::numeric::ublas::column(f_copy, 0);
    
     w = boost::numeric::ublas::prod(v_m_tmp3, 
-            beta * boost::numeric::ublas::column(f_copy, 0));
+            beta * boost::numeric::ublas::project(f_column, r3));
 
     beta = norm_2(w);
     hump = std::max(hump, beta);
@@ -381,7 +384,9 @@ void SparseHamiltonian::expv_krylov_solve(double tv,
     t_now = t_now + t_step;
     t_new = gamma * t_step * std::pow((t_step * tol / err_loc), xm);
     s = std::pow(10, floor(std::log10(t_new)) - 1);
+    t_new = ceil(t_new / s) * s;
 
+    err_loc = std::max(err_loc, rndoff);
     s_error = s_error + err_loc;
   } // End of outer while loop
   err = s_error;
