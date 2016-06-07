@@ -53,7 +53,7 @@ Hamiltonian &Hamiltonian::operator=(const Hamiltonian &rhs)
 /*******************************************************************************/
 // Operator [] overloading
 /*******************************************************************************/
-double* Hamiltonian::operator[](int i)
+double* Hamiltonian::operator[](unsigned int i)
 {
   if(i >= basis_size_){
     std::cout << "Index out of bounds" << std::endl;
@@ -66,7 +66,7 @@ double* Hamiltonian::operator[](int i)
 /*******************************************************************************/
 // Operator () overloading
 /*******************************************************************************/
-double& Hamiltonian::operator()(int i, int j)
+double& Hamiltonian::operator()(unsigned int i, unsigned int j)
 {
   if(i >= basis_size_ || j >= basis_size_){
     std::cout << "Index out of bounds" << std::endl;
