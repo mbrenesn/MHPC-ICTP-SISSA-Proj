@@ -1,12 +1,15 @@
 # Upper directory makefile
 SHELL=/bin/bash
 
-default: main.x
+serial:
+	$(MAKE) -C src/serial-boost/
+	mv src/serial-boost/serial.x .
 
-main.x:
-	$(MAKE) -C src/
-	mv src/main.x .
+parallel:
+	$(MAKE) -C src/parallel-petsc-slepc/
+	mv src/parallel-petsc-slepc/parallel.x .
 
 clean:
-	$(MAKE) -C src/ clean
+	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/ wipe
 	rm -r *.x 
