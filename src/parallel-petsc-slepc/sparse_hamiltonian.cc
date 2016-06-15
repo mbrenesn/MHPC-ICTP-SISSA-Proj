@@ -280,7 +280,7 @@ void SparseHamiltonian::expv_krylov_solve(const double tv, const double tol, con
   FNSetScale(f_, tv, 1.0);
   MFNSetTolerances(mfn_, tol, maxits);
   
-  MFNSetType(mfn_, MFNEXPOKIT);
+  MFNSetType(mfn_, MFNKRYLOV);
 
   MFNSetUp(mfn_);
   MFNSolve(mfn_, v, w);
