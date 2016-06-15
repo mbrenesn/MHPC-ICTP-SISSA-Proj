@@ -1,21 +1,10 @@
 #include <iostream>
 
-#include <sys/time.h>
-#include <sys/resource.h>
-
 #include "basis.h"
 #include "hamiltonian.h"
 #include "sparse_hamiltonian.h"
 
-double seconds()
-{
-    //Returns the second elapsed since Epoch (00:00:00 UTC, January 1, 1970)
-    struct timeval tmp;
-    double sec;
-    gettimeofday( &tmp, (struct timezone *)0 );
-    sec = tmp.tv_sec + ((double)tmp.tv_usec)/1000000.0;
-    return sec;
-}
+#include <petsctime.h>
 
 int main(int argc, char **argv)
 {
@@ -60,9 +49,10 @@ int main(int argc, char **argv)
   
   // Invoke the constructor with the basis size. The constructor will initialize PETSc
   // and create an instance of the PETSc MatMPIAIJ matrix type. 
+  PetscLogDouble time1, time2;
+
+  PetscTime(&time1);
  
-  double t1 = seconds();
-  
   SparseHamiltonian sparse_hamiltonian(basis.basis_size(), argc, argv);
 
   // The matrix is populated using the construct_hamiltonian_matrix method. The matrix
@@ -103,31 +93,43 @@ int main(int argc, char **argv)
   int nlocal;
   VecGetLocalSize(v, &nlocal);
 
+  PetscLogDouble constt1, constt2;
+
+  PetscTime(&constt1);
   sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n,nlocal,start,end);
+  PetscTime(&constt2);
+
+  // The int_basis is not required anymore, so let's reclaim some precious memory
+  delete [] int_basis;
 
   sparse_hamiltonian.print_hamiltonian();
   
   VecView(v, PETSC_VIEWER_STDOUT_WORLD);
 
+  PetscLogDouble kryt1, kryt2;
+
+  PetscTime(&kryt1);
   sparse_hamiltonian.expv_krylov_solve(tv, tol, maxit, w, v);
+  PetscTime(&kryt2);
   
   VecView(w, PETSC_VIEWER_STDOUT_WORLD);
 
   PetscReal norm;
   VecNorm(w, NORM_2, &norm);
-
-  double t2 = seconds();
   
+  PetscTime(&time2);
+
   if(sparse_hamiltonian.get_mpirank() == 0){  
     std::cout << "Size of the Hilbert space:" << std::endl;
     std::cout << basis.basis_size() << std::endl;
     std::cout << "L2 norm of the w vec: " << norm << std::endl; 
-    std::cout << "Time: " << t2 - t1 << " seconds" << std::endl; 
+    std::cout << "Time Construction: " << constt2 - constt1 << " seconds" << std::endl; 
+    std::cout << "Time Krylov: " << kryt2 - kryt1 << " seconds" << std::endl; 
+    std::cout << "Time total: " << time2 - time1 << " seconds" << std::endl; 
   }
 
   VecDestroy(&v);  
   VecDestroy(&w);
-  delete [] int_basis;
   delete [] bit_basis;
   return 0;
 }
