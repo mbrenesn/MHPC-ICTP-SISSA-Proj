@@ -1,0 +1,132 @@
+NUM PROCS 60
+Hardcore bosons
+System has 24 sites and 12 particles
+Parameters: V = 0.2 t = -1
+Size of the Hilbert space:
+2704156
+L2 norm of the final state vec: 1
+Time Construction: 7.00812 seconds
+Time Krylov Evolution: 903.223 seconds
+Number of iterations: 30
+Times used for evolution: 
+Time	Loschmidt echo
+0	1
+0.1	0.684027
+0.2	0.684027
+0.3	0.684027
+0.4	0.684027
+0.5	0.684027
+0.6	0.684027
+0.7	0.684027
+0.8	0.684027
+0.9	0.684027
+1	0.684027
+10	0.00536487
+20	0.0214493
+30	0.0214493
+40	0.0214493
+50	0.0214494
+60	0.0214494
+70	0.0214494
+80	0.0214494
+90	0.0214494
+100	0.0214495
+200	0.0658101
+300	0.0658101
+400	0.0658101
+500	0.0658101
+600	0.0658101
+700	0.0658101
+800	0.0658102
+900	0.0658102
+1000	0.0658102
+2000	0.0658102
+Time total: 915.503 seconds
+NUM PROCS 60
+Hardcore bosons
+System has 26 sites and 13 particles
+Parameters: V = 0.2 t = -1
+Size of the Hilbert space:
+10400600
+L2 norm of the final state vec: 1
+Time Construction: 17.7911 seconds
+Time Krylov Evolution: 6135.25 seconds
+Number of iterations: 30
+Times used for evolution: 
+Time	Loschmidt echo
+0	1
+0.1	0.646786
+0.2	0.646786
+0.3	0.646786
+0.4	0.646786
+0.5	0.646786
+0.6	0.646786
+0.7	0.646786
+0.8	0.646786
+0.9	0.646786
+1	0.646786
+10	0.0155593
+20	0.00655224
+30	0.00655225
+40	0.00655225
+50	0.00655226
+60	0.00655226
+70	0.00655226
+80	0.00655227
+90	0.00655227
+100	0.00655228
+200	0.0341965
+300	0.0341965
+400	0.0341965
+500	0.0341964
+600	0.0341964
+700	0.0341964
+800	0.0341964
+900	0.0341964
+1000	0.0341964
+2000	0.0341963
+Time total: 6158.13 seconds
+NUM PROCS 60
+Hardcore bosons
+System has 28 sites and 14 particles
+Parameters: V = 0.2 t = -1
+Size of the Hilbert space:
+40116600
+L2 norm of the final state vec: 1
+Time Construction: 18.9426 seconds
+Time Krylov Evolution: 22630.1 seconds
+Number of iterations: 30
+Times used for evolution: 
+Time	Loschmidt echo
+0	1
+0.1	0.609527
+0.2	0.609527
+0.3	0.609527
+0.4	0.609527
+0.5	0.609527
+0.6	0.609527
+0.7	0.609527
+0.8	0.609527
+0.9	0.609527
+1	0.609527
+10	0.011432
+20	0.0056612
+30	0.0056612
+40	0.0056612
+50	0.0056612
+60	0.00566119
+70	0.00566119
+80	0.00566119
+90	0.00566119
+100	0.00566119
+200	0.0201655
+300	0.0201655
+400	0.0201655
+500	0.0201655
+600	0.0201655
+700	0.0201655
+800	0.0201655
+900	0.0201655
+1000	0.0201655
+2000	0.0201655
+Time total: 22658.8 seconds
