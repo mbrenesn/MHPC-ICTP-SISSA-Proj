@@ -300,7 +300,7 @@ void SparseHamiltonian::expv_krylov_solve(const double tv, const double tol, con
 /*******************************************************************************/
 // TODO Change design!!!
 void SparseHamiltonian::time_evolution(const unsigned int iterations, const double *times, 
-        const double tol, const int maxits, double *loschmidt, Vec &w, Vec &v)
+        const double tol, const int maxits, double *loschmidt, Vec &w, const Vec &v)
 {
   MFNCreate(PETSC_COMM_WORLD, &mfn_);
   MFNSetOperator(mfn_, ham_mat_);
@@ -327,7 +327,7 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
   
     FNSetScale(f_, times[tt] - times[tt - 1], 1.0);
 
-    MFNSolve(mfn_, v, w);
+    MFNSolve(mfn_, vec_help_, w);
     VecDot(v, w, &l_echo);
     loschmidt[tt] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
         + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
@@ -338,7 +338,7 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
       exit(1);
     }
 
-    VecCopy(w, v);
+    VecCopy(w, vec_help_);
     //if(mpirank_ == 0)  
     //  std::cout << "Delta_Time" << "\t" << times[tt] -times[tt - 1] << std::endl;
     //VecView(w, PETSC_VIEWER_STDOUT_WORLD);

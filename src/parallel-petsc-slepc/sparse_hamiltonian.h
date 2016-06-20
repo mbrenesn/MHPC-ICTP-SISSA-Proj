@@ -39,6 +39,6 @@ class SparseHamiltonian
     void expv_krylov_solve(const double tv, const double tol, const int maxits,
             Vec &w, Vec &v);
     void time_evolution(const unsigned int iterations, const double *times, 
-            const double tol, const int maxits, double *loschmidt, Vec &w, Vec &v);
+            const double tol, const int maxits, double *loschmidt, Vec &w, const Vec &v);
 };
 #endif
