@@ -17,6 +17,7 @@ class SparseHamiltonian
   private:
     unsigned long long int basis_size_;
     Mat ham_mat_;
+    Vec vec_help_;
     PetscMPIInt mpirank_, mpisize_;
     MFN mfn_;
     FN f_;
@@ -37,5 +38,7 @@ class SparseHamiltonian
     void print_hamiltonian();
     void expv_krylov_solve(const double tv, const double tol, const int maxits,
             Vec &w, Vec &v);
+    void time_evolution(const unsigned int iterations, const double *times, 
+            const double tol, const int maxits, double *loschmidt, Vec &w, Vec &v);
 };
 #endif

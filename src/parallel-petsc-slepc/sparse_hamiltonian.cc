@@ -267,7 +267,10 @@ void SparseHamiltonian::print_hamiltonian()
 }
 
 /*******************************************************************************/
-// SLEPc's MFN component to solve the system.
+// SLEPc's MFN component to solve the system. It's not important not to mix
+// calls to this function with the time evolution, given that this will create
+// another instance of MFN. This can be used for testing an debugging, for
+// the actual time evolution use the given method.
 /*******************************************************************************/
 void SparseHamiltonian::expv_krylov_solve(const double tv, const double tol, const int maxits,
     Vec &w, Vec &v)
@@ -285,5 +288,62 @@ void SparseHamiltonian::expv_krylov_solve(const double tv, const double tol, con
   MFNSetUp(mfn_);
   MFNSolve(mfn_, v, w);
 
+  MFNDestroy(&mfn_);
+}
+
+/*******************************************************************************/
+// Time evolution using SLEPc's MFN component. Need to pass an array containing
+// the time values in which the first entry corresponds to the the time of the 
+// initial vector. 
+// The time used in consecutive iterations is t_{i+1} - t_{i}.
+// This calculates the Loschmidt echo as well and puts it an an array.
+/*******************************************************************************/
+// TODO Change design!!!
+void SparseHamiltonian::time_evolution(const unsigned int iterations, const double *times, 
+        const double tol, const int maxits, double *loschmidt, Vec &w, Vec &v)
+{
+  MFNCreate(PETSC_COMM_WORLD, &mfn_);
+  MFNSetOperator(mfn_, ham_mat_);
+  
+  MFNGetFN(mfn_, &f_);
+  FNSetType(f_, FNEXP);
+  MFNSetTolerances(mfn_, tol, maxits);
+  
+  MFNSetType(mfn_, MFNEXPOKIT);
+  MFNSetUp(mfn_);
+
+  PetscReal normcheck;
+  PetscScalar l_echo;
+
+  // A copy of the initial vector, given that we need the initial state for later
+  // computations
+  VecDuplicate(v, &vec_help_);
+  VecCopy(v, vec_help_);
+
+  VecDot(v, v, &l_echo);
+  loschmidt[0] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
+      + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
+  for(unsigned int tt = 1; tt < (iterations + 1); ++tt){
+  
+    FNSetScale(f_, times[tt] - times[tt - 1], 1.0);
+
+    MFNSolve(mfn_, v, w);
+    VecDot(v, w, &l_echo);
+    loschmidt[tt] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
+        + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
+
+    VecNorm(w, NORM_2, &normcheck);
+    if(normcheck > 1.001 || normcheck < 0.999){
+      std::cerr << "Normcheck failed!" << std::endl;
+      exit(1);
+    }
+
+    VecCopy(w, v);
+    //if(mpirank_ == 0)  
+    //  std::cout << "Delta_Time" << "\t" << times[tt] -times[tt - 1] << std::endl;
+    //VecView(w, PETSC_VIEWER_STDOUT_WORLD);
+  }
+
+  VecDestroy(&vec_help_);
   MFNDestroy(&mfn_);
 }
