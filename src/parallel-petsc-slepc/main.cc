@@ -18,8 +18,6 @@ int main(int argc, char **argv)
   unsigned long long int *int_basis = new unsigned long long int[basis.basis_size()];
   basis.construct_int_basis(int_basis);
 
-#if 0
-
   std::cout << "Here's the basis in int notation:" << std::endl;
   for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
 
@@ -46,8 +44,6 @@ int main(int argc, char **argv)
     }
     std::cout << std::endl;
   }
-
-#endif
 
   // Sparse hamiltonian testing zone
   
@@ -128,7 +124,10 @@ int main(int argc, char **argv)
 
   sparse_hamiltonian.print_hamiltonian();
  
-  std::cout << "Initial state at t = 0" << std::endl;
+  // Initial vector
+  if(sparse_hamiltonian.get_mpirank() == 0){  
+    std::cout << "Initial state at t = 0" << std::endl;
+  }
   VecView(v, PETSC_VIEWER_STDOUT_WORLD);
 
   PetscLogDouble kryt1, kryt2;
@@ -136,27 +135,21 @@ int main(int argc, char **argv)
   /*** Time evolution ***/
   PetscTime(&kryt1);
   
-  unsigned int iterations = 10;
-  double times[iterations] = {0.0,0.1,0.2,0.3,0.4,0.5,1.0,2.0,5.0,10.0};
-  PetscReal normcheck;
-  for(unsigned int tt = 1; tt < iterations; ++tt){
-   
-    sparse_hamiltonian.expv_krylov_solve(times[tt] - times[tt - 1], tol, maxit, w, v);
-    VecNorm(w, NORM_2, &normcheck);
-    if(normcheck > 1.001 || normcheck < 0.999){
-      std::cerr << "Normcheck failed!" << std::endl;
-      exit(1);
-    }
+  unsigned int iterations = 30;
+  double times[iterations + 1] 
+      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100,
+         200,300,400,500,600,700,800,900,1000,2000};
+  
+  double *loschmidt = new double[iterations + 1]; 
 
-    VecCopy(w, v);
-    std::cout << "Time" << "\t" << times[tt] << std::endl;
-    VecView(v, PETSC_VIEWER_STDOUT_WORLD);
-  }
+  sparse_hamiltonian.time_evolution(iterations, times, tol, maxit, loschmidt, w, v);
    
   PetscTime(&kryt2);
   /*** End time evolution ***/
   
-  // Now the state at the last step is stored in v
+  // Final vector
+  if(sparse_hamiltonian.get_mpirank() == 0)  
+    std::cout << "Final state:" << std::endl;
   VecView(w, PETSC_VIEWER_STDOUT_WORLD);
 
   PetscReal norm;
@@ -165,16 +158,25 @@ int main(int argc, char **argv)
   PetscTime(&time2);
 
   if(sparse_hamiltonian.get_mpirank() == 0){  
+    std::cout << "Hardcore bosons" << std::endl;    
+    std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
+    std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
     std::cout << "Size of the Hilbert space:" << std::endl;
     std::cout << basis.basis_size() << std::endl;
     std::cout << "L2 norm of the final state vec: " << norm << std::endl; 
     std::cout << "Time Construction: " << constt2 - constt1 << " seconds" << std::endl; 
-    std::cout << "Time Krylov Evolution: " << kryt2 - kryt1 << " seconds" << std::endl; 
+    std::cout << "Time Krylov Evolution: " << kryt2 - kryt1 << " seconds" << std::endl;
+    std::cout << "Number of iterations: " << iterations << std::endl;
+    std::cout << "Times used for evolution: " << std::endl; 
+    std::cout << "Time" << "\t" << "Loschmidt echo" << std::endl;
+    for(unsigned int i = 0; i <= iterations; ++i)
+      std::cout << times[i] << "\t" << loschmidt[i] << std::endl;
     std::cout << "Time total: " << time2 - time1 << " seconds" << std::endl; 
   }
 
   VecDestroy(&v);  
   VecDestroy(&w);
-  //delete [] bit_basis;
+  delete [] loschmidt;
+  delete [] bit_basis;
   return 0;
 }
