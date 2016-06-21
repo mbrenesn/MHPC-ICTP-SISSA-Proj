@@ -31,7 +31,7 @@ int SparseHamiltonian::get_mpirank()
 
 inline
 unsigned long long int SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> bs, 
-        unsigned int l)
+    unsigned int l)
 {
   unsigned long long integer = 0;
 
@@ -52,7 +52,7 @@ unsigned long long int SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> 
 // TODO be careful with this int! Check if it may overflow
 inline
 int SparseHamiltonian::binsearch(const unsigned long long int *array, 
-        unsigned long long int len, unsigned long long int value)
+    unsigned long long int len, unsigned long long int value)
 {
   if(len == 0) return -1;
   unsigned long long int mid = len / 2;
@@ -75,7 +75,7 @@ int SparseHamiltonian::binsearch(const unsigned long long int *array,
 // entries of the matrix
 /*******************************************************************************/
 void SparseHamiltonian::determine_allocation_details(unsigned long long int *int_basis, 
-        unsigned int l, const PetscInt m, int start, int end, PetscInt *diag, PetscInt *off)
+    unsigned int l, const PetscInt m, int start, int end, PetscInt *diag, PetscInt *off)
 {
   for(int i = 0; i < m; ++i) diag[i] = 1;
 
@@ -163,7 +163,7 @@ void SparseHamiltonian::determine_allocation_details(unsigned long long int *int
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
 void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int *int_basis, 
-        double V, double t, unsigned int l, unsigned int n, int nlocal, int start, int end)
+    double V, double t, unsigned int l, unsigned int n, int nlocal, int start, int end)
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
   // have in the diagonal submatrix and the offdiagonal submatrices for each process
@@ -256,6 +256,8 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int *int
 
   MatAssemblyBegin(ham_mat_, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(ham_mat_, MAT_FINAL_ASSEMBLY);
+
+  MatSetOption(ham_mat_, MAT_SYMMETRIC, PETSC_TRUE);
 }
 
 /*******************************************************************************/
@@ -300,7 +302,7 @@ void SparseHamiltonian::expv_krylov_solve(const double tv, const double tol, con
 /*******************************************************************************/
 // TODO Change design!!!
 void SparseHamiltonian::time_evolution(const unsigned int iterations, const double *times, 
-        const double tol, const int maxits, double *loschmidt, Vec &w, const Vec &v)
+    const double tol, const int maxits, double *loschmidt, Vec &w, const Vec &v)
 {
   MFNCreate(PETSC_COMM_WORLD, &mfn_);
   MFNSetOperator(mfn_, ham_mat_);
@@ -312,9 +314,12 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
   MFNSetType(mfn_, MFNEXPOKIT);
   MFNSetUp(mfn_);
 
+#ifdef NORMCHECK
   PetscReal normcheck;
+#endif
+  
   PetscScalar l_echo;
-
+  MFNConvergedReason reason;
   // A copy of the initial vector, given that we need the initial state for later
   // computations
   VecDuplicate(v, &vec_help_);
@@ -328,15 +333,25 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
     FNSetScale(f_, times[tt] - times[tt - 1], 1.0);
 
     MFNSolve(mfn_, vec_help_, w);
+
+    MFNGetConvergedReason(mfn_, &reason);
+    if(reason < 0){
+      std::cerr << "WARNING! Solver did not converged with given parameters" << std::endl;
+      std::cerr << "Change the tolerance or the maximum number of iterations" << std::endl;
+      exit(1);
+    }
+
     VecDot(v, w, &l_echo);
     loschmidt[tt] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
         + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
 
+#ifdef NORMCHECK
     VecNorm(w, NORM_2, &normcheck);
     if(normcheck > 1.001 || normcheck < 0.999){
       std::cerr << "Normcheck failed!" << std::endl;
       exit(1);
     }
+#endif
 
     VecCopy(w, vec_help_);
     //if(mpirank_ == 0)  
