@@ -14,10 +14,10 @@ parallel.x : basis.o hamiltonian.o sparse_hamiltonian.o main.o
 	-${CLINKER} $^ -o parallel.x ${SLEPC_SYS_LIB}
 
 sparse_hamiltonian.o : sparse_hamiltonian.cc
-	$(CXX) -c $< -fPIC  -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -fvisibility=hidden -g -O3 $(EEFLAGS) -I$(SLEPC_DIR)/include -I$(SLEPC_DIR)/x86_64/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/x86_64/include -I$(MPI_DIR)/include
+	$(CXX) -c $< -fPIC  -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -fvisibility=hidden -g -O3 $(EEFLAGS) -I$(SLEPC_DIR)/include -I$(SLEPC_DIR)/$(PETSC_ARCH)/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/$(PETSC_ARCH)/include -I$(MPI_DIR)/include
 
 main.o : main.cc
-	$(CXX) -c $< -fPIC  -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -fvisibility=hidden -g -O3 -I$(SLEPC_DIR)/include -I$(SLEPC_DIR)/x86_64/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/x86_64/include -I$(MPI_DIR)/include
+	$(CXX) -c $< -fPIC  -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -fvisibility=hidden -g -O3 -I$(SLEPC_DIR)/include -I$(SLEPC_DIR)/$(PETSC_ARCH)/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/$(PETSC_ARCH)/include -I$(MPI_DIR)/include
 
 %.o : %.cc
 	$(CXX) $(CXXFLAGS) -c $<
