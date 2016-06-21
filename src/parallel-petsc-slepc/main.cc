@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 4;
-  unsigned int n = 2;
+  unsigned int l = 10;
+  unsigned int n = 5;
   double V = 0.2;
   double t = -1.0;
 
@@ -17,6 +17,8 @@ int main(int argc, char **argv)
 
   unsigned long long int *int_basis = new unsigned long long int[basis.basis_size()];
   basis.construct_int_basis(int_basis);
+
+#if 0
 
   std::cout << "Here's the basis in int notation:" << std::endl;
   for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
@@ -45,6 +47,8 @@ int main(int argc, char **argv)
     std::cout << std::endl;
   }
 
+#endif
+
   // Sparse hamiltonian testing zone
   
   // Invoke the constructor with the basis size. The constructor will initialize PETSc
@@ -62,8 +66,8 @@ int main(int argc, char **argv)
   // Declare vectors and parameters
   Vec w;
   Vec v;
-  double tol = 1.0e-06;
-  int maxit = 30;
+  double tol = 1.0e-04;
+  int maxits = 100000;
 
   // Create the vectors and let PETSc decide the distribution between processes
   VecCreate(PETSC_COMM_WORLD, &v);
@@ -122,39 +126,39 @@ int main(int argc, char **argv)
   // The int_basis is not required anymore, so let's reclaim some precious memory
   delete [] int_basis;
 
-  sparse_hamiltonian.print_hamiltonian();
+  //sparse_hamiltonian.print_hamiltonian();
  
   // Initial vector
-  if(sparse_hamiltonian.get_mpirank() == 0){  
-    std::cout << "Initial state at t = 0" << std::endl;
-  }
-  VecView(v, PETSC_VIEWER_STDOUT_WORLD);
+  //if(sparse_hamiltonian.get_mpirank() == 0){  
+  //  std::cout << "Initial state at t = 0" << std::endl;
+  //}
+  //VecView(v, PETSC_VIEWER_STDOUT_WORLD);
 
   PetscLogDouble kryt1, kryt2;
 
   /*** Time evolution ***/
   PetscTime(&kryt1);
   
-  unsigned int iterations = 29;
+  unsigned int iterations = 34;
   double times[iterations + 1] 
       = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100,
-         200,300,400,500,600,700,800,900,1000};
+         200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,10000};
   
   double *loschmidt = new double[iterations + 1]; 
 
-  sparse_hamiltonian.time_evolution(iterations, times, tol, maxit, loschmidt, w, v);
+  sparse_hamiltonian.time_evolution(iterations, times, tol, maxits, loschmidt, w, v);
    
   PetscTime(&kryt2);
   /*** End time evolution ***/
   
   // Final vector
-  if(sparse_hamiltonian.get_mpirank() == 0)  
-    std::cout << "Final state:" << std::endl;
-  VecView(w, PETSC_VIEWER_STDOUT_WORLD);
+  //if(sparse_hamiltonian.get_mpirank() == 0)  
+  //  std::cout << "Final state:" << std::endl;
+  //VecView(w, PETSC_VIEWER_STDOUT_WORLD);
 
   PetscReal norm;
   VecNorm(w, NORM_2, &norm);
-  
+ 
   PetscTime(&time2);
 
   if(sparse_hamiltonian.get_mpirank() == 0){  
@@ -177,6 +181,6 @@ int main(int argc, char **argv)
   VecDestroy(&v);  
   VecDestroy(&w);
   delete [] loschmidt;
-  delete [] bit_basis;
+  //delete [] bit_basis;
   return 0;
 }
