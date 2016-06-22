@@ -1,5 +1,7 @@
 function loschmidt = hardcorebosons( ham_mat, times, v_initial, tolerance )
 
+ham_mat = sparse(ham_mat);
+
 v_help = v_initial;
 sizeits = size(times);
 iterations = sizeits(2);
