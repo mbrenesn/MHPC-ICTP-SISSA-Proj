@@ -1,10 +1,3 @@
-#include <iostream>
-#include <boost/dynamic_bitset.hpp>
-#include <boost/math/constants/constants.hpp>
-#include <stdexcept>
-#include <algorithm>
-#include <cmath>
-
 #include "sparse_hamiltonian.h"
 
 SparseHamiltonian::SparseHamiltonian(unsigned long long int basis_size, int argc, char **argv)

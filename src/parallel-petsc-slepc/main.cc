@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 10;
-  unsigned int n = 5;
+  unsigned int l = 16;
+  unsigned int n = 8;
   double V = 0.2;
   double t = -1.0;
 
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
    
   PetscTime(&kryt2);
   /*** End time evolution ***/
-  
+
   // Final vector
   //if(sparse_hamiltonian.get_mpirank() == 0)  
   //  std::cout << "Final state:" << std::endl;
