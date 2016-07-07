@@ -22,8 +22,8 @@ int main(int argc, char **argv)
   unsigned long long int *int_basis = new unsigned long long int[bsize];
   basis.construct_int_basis(int_basis);
 
-  std::cout << "Here's the basis in int notation:" << std::endl;
-  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
+  //std::cout << "Here's the basis in int notation:" << std::endl;
+  //for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
 
   // Create an instance of the sparse hamiltonian class to fill the matrix
   // The matrix is using memory space from the host and the construct_hamiltonian_matrix
@@ -32,6 +32,8 @@ int main(int argc, char **argv)
 
   sparse_hamiltonian.construct_hamiltonian_matrix(V, t, l, n, int_basis);
 
+  // Now the matrix resides in host and device memory.
+  
   delete [] int_basis;
   return 0;
 }

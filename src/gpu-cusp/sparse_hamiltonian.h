@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <cmath>
 
-typedef unsigned int IType;
+typedef int IType;
 typedef cusp::complex<double> VType;
 typedef cusp::device_memory DSpace;
 typedef cusp::host_memory HSpace;
@@ -21,8 +21,9 @@ class SparseHamiltonian
 {
   private:
     unsigned int basis_size_;
-    cusp::coo_matrix<IType, VType, HSpace> ham_mat_host_;
   public:
+    cusp::coo_matrix<IType, VType, HSpace> ham_mat_host;
+    cusp::coo_matrix<IType, VType, DSpace> ham_mat_device;
     SparseHamiltonian(unsigned int basis_size);
     ~SparseHamiltonian();
     inline unsigned int binary_to_int(boost::dynamic_bitset<> bs, unsigned int l);

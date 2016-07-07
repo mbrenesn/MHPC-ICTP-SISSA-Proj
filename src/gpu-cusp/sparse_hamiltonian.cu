@@ -126,10 +126,10 @@ void SparseHamiltonian::determine_allocation_details(const unsigned long long in
 void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigned int l, 
     unsigned int n, const unsigned long long *int_basis) 
 {
-  unsigned int counter;
-  this->determine_allocation_details(int_basis, l, counter);
+  unsigned int num_entries;
+  this->determine_allocation_details(int_basis, l, num_entries);
 
-  ham_mat_host_.resize(basis_size_, basis_size_, counter);
+  ham_mat_host.resize(basis_size_, basis_size_, num_entries);
   // Off-diagonal elements: the 't' terms
   // Grab 1 of the states and turn it into bit representation
   unsigned int count = 0;
@@ -138,6 +138,9 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
     boost::dynamic_bitset<> bs(l, int_basis[state]);
 
     // Loop over all sites of the bit representation
+    double v_term = 0.0;
+    bool passed = false;
+    unsigned int saved_count;
     for(unsigned int site = 0; site < l; ++site){
       // A copy to avoid modifying the original basis
       boost::dynamic_bitset<> bitset = bs;
@@ -149,10 +152,12 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
         // If there's a particle in next site, do nothing
         if(bitset[next_site1] == 1){
           // Accumulate 'V' terms
-          ham_mat_host_.row_indices[count] = state;
-          ham_mat_host_.column_indices[count] = state;
-          ham_mat_host_.values[count] += cusp::complex<double> (0.0, V);
-          count++;
+          v_term += V;
+          if(!passed){
+            saved_count = count;
+            count++;
+            passed = true;
+          }
           continue;
         }
         // Otherwise do a swap
@@ -168,9 +173,9 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
             exit(1);
           } 
           
-          ham_mat_host_.row_indices[count] = match_ind1;
-          ham_mat_host_.column_indices[count] = state;
-          ham_mat_host_.values[count] += cusp::complex<double> (0.0, t);
+          ham_mat_host.row_indices[count] = match_ind1;
+          ham_mat_host.column_indices[count] = state;
+          ham_mat_host.values[count] = cusp::complex<double> (0.0, t);
           count++;
         }
       }
@@ -191,21 +196,31 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
             exit(1);
           } 
           
-          ham_mat_host_.row_indices[count] = match_ind0;
-          ham_mat_host_.column_indices[count] = state;
-          ham_mat_host_.values[count] += cusp::complex<double> (0.0, t);
+          ham_mat_host.row_indices[count] = match_ind0;
+          ham_mat_host.column_indices[count] = state;
+          ham_mat_host.values[count] = cusp::complex<double> (0.0, t);
           count++;
         }
         // Otherwise do nothing
         else{
           continue;
         }
-      }
+      } 
+    }
+    
+    if(v_term != 0.0){
+      ham_mat_host.row_indices[saved_count] = state;
+      ham_mat_host.column_indices[saved_count] = state;
+      ham_mat_host.values[saved_count] = cusp::complex<double> (0.0, v_term);
     }
   }
- 
-  std::cout << count << std::endl;
-  cusp::print(ham_mat_host_);
+
+  // This needs to be sorted for the next operations, this may be costly
+  ham_mat_host.sort_by_row_and_column();
+
+  // The Hamiltonian is now ready on host side. We move it to device for computations
+  ham_mat_device.resize(basis_size_, basis_size_, num_entries);
+  ham_mat_device = ham_mat_host;
 }
 #if 0
 /*******************************************************************************/
