@@ -4,6 +4,8 @@ SparseHamiltonian::SparseHamiltonian(unsigned long long int basis_size, int argc
 {   
   SlepcInitialize(&argc, &argv, 0, 0); 
   basis_size_ = basis_size;
+  MPI_Comm_size(PETSC_COMM_WORLD, &mpisize_);
+  MPI_Comm_rank(PETSC_COMM_WORLD, &mpirank_);
 }
 
 SparseHamiltonian::~SparseHamiltonian()
@@ -160,8 +162,6 @@ void SparseHamiltonian::construct_hamiltonian_matrix(unsigned long long int *int
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
   // have in the diagonal submatrix and the offdiagonal submatrices for each process
-  MPI_Comm_size(PETSC_COMM_WORLD, &mpisize_);
-  MPI_Comm_rank(PETSC_COMM_WORLD, &mpirank_);
 
   // Allocating memory only for the non-zero entries of the matrix
   PetscInt *d_nnz, *o_nnz;

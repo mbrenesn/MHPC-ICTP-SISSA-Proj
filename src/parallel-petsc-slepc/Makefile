@@ -23,4 +23,4 @@ main.o : main.cc
 	$(CXX) $(CXXFLAGS) -c $<
 
 wipe : 
-	rm -r *.o
+	rm -r *.o *.x

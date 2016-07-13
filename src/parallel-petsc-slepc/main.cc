@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 16;
-  unsigned int n = 8;
+  unsigned int l = 4;
+  unsigned int n = 2;
   double V = 0.2;
   double t = -1.0;
 
@@ -18,50 +18,16 @@ int main(int argc, char **argv)
   unsigned long long int *int_basis = new unsigned long long int[basis.basis_size()];
   basis.construct_int_basis(int_basis);
 
-#if 0
-
-  std::cout << "Here's the basis in int notation:" << std::endl;
-  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
-
-  boost::dynamic_bitset<> *bit_basis = 
-      new boost::dynamic_bitset<>[basis.basis_size()];
-  basis.construct_bit_basis(bit_basis, int_basis);
-  
-  std::cout << "Here's the basis in binary notation:" << std::endl;
-  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << bit_basis[i] << std::endl;
-
-  // Construction of the hamiltonian matrix, by calling the constructor
-  // the object is the hamiltonian matrix itself
-  Hamiltonian hamiltonian(basis.basis_size());
-
-  // Call the method to construct_hamiltonian_matrix to populate the entries
-  // Takes the integer basis, number of sites and particles as arguments
-  hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,l,n);
-
-  // This is a 1D array representation of the matrix, [][] is overloaded so you can
-  // access the elements with the [] operator, () is a 'BETTER' choice.
-  for(unsigned int i=0;i<basis.basis_size();++i){
-    for(unsigned int j=0;j<basis.basis_size();++j){
-      std::cout << " " << hamiltonian(i,j);
-    }
-    std::cout << std::endl;
-  }
-
-#endif
-
   // Sparse hamiltonian testing zone
   
   // Invoke the constructor with the basis size. The constructor will initialize PETSc
-  // and create an instance of the PETSc MatMPIAIJ matrix type. 
+  // and create an instance of the PETSc MatMPIAIJ matrix type. This will also initialize
+  // the MPI environment
   PetscLogDouble time1, time2;
 
   PetscTime(&time1);
  
   SparseHamiltonian sparse_hamiltonian(basis.basis_size(), argc, argv);
-
-  // The matrix is populated using the construct_hamiltonian_matrix method. The matrix
-  // distribution among processors will inherit the distribution of the RHS vector of
-  // the equation. PETSc uses distribution of rows among processors
 
   // Declare vectors and parameters
   Vec w;
@@ -74,8 +40,7 @@ int main(int argc, char **argv)
   VecSetSizes(v, PETSC_DECIDE, basis.basis_size());
   VecSetType(v, VECMPI);
  
-  // An example of the RHS vector to test solutions. This will change into a prepared 
-  // initial quantum state
+  // An example of the RHS vector to test solutions.
   //PetscComplex z;
   PetscInt start, end;
   VecGetOwnershipRange(v, &start, &end);
@@ -139,10 +104,9 @@ int main(int argc, char **argv)
   /*** Time evolution ***/
   PetscTime(&kryt1);
   
-  const int iterations = 34;
+  const int iterations = 20;
   double times[iterations + 1] 
-      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100,
-         200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,10000};
+      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
   
   double *loschmidt = new double[iterations + 1]; 
 
@@ -181,6 +145,5 @@ int main(int argc, char **argv)
   VecDestroy(&v);  
   VecDestroy(&w);
   delete [] loschmidt;
-  //delete [] bit_basis;
   return 0;
 }
