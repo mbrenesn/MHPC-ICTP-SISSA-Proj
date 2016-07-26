@@ -75,9 +75,9 @@ PetscInt SparseHamiltonian::binsearch(const PetscInt *array, PetscInt len, Petsc
 // entries of the matrix
 /*******************************************************************************/
 void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis, 
-    const PetscInt m, int start, int end, PetscInt *diag, PetscInt *off)
+    const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off)
 {
-  for(int i = 0; i < m; ++i) diag[i] = 1;
+  for(PetscInt i = 0; i < m; ++i) diag[i] = 1;
 
   for(PetscInt state = start; state < end; ++state){
     
@@ -162,7 +162,7 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
 void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis, 
-    double V, double t, int nlocal, int start, int end)
+    double V, double t, PetscInt nlocal, PetscInt start, PetscInt end)
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
   // have in the diagonal submatrix and the offdiagonal submatrices for each process

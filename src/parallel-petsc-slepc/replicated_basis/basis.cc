@@ -65,7 +65,7 @@ void Basis::construct_int_basis(PetscInt *int_basis)
 
   int_basis[0] = first;
 
-  for(unsigned int i = 1; i < size; ++i){
+  for(PetscInt i = 1; i < size; ++i){
     PetscInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     
@@ -84,7 +84,7 @@ void Basis::construct_bit_basis(boost::dynamic_bitset<> *bit_basis,
     PetscInt *int_basis)
 {
   PetscInt size = basis_size();
-  for(unsigned int i = 0; i < size; ++i){
+  for(PetscInt i = 0; i < size; ++i){
     boost::dynamic_bitset<> bs(l_, int_basis[i]);
     bit_basis[i] = bs;
   }

@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 16;
-  unsigned int n = 8;
+  unsigned int l = 32;
+  unsigned int n = 16;
   double V = 0.2;
   double t = -1.0;
 
@@ -106,9 +106,10 @@ int main(int argc, char **argv)
   /*** Time evolution ***/
   PetscTime(&kryt1);
   
-  const int iterations = 20;
+  const int iterations = 33;
   double times[iterations + 1] 
-      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
+      = {0.0,0.0001,0.00025,0.0005,0.001,0.0025,0.005,0.01,0.025,0.05,0.06,0.07,0.08,0.09,
+        0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
   
   double *loschmidt = new double[iterations + 1]; 
 
