@@ -8,10 +8,10 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 4;
-  unsigned int n = 2;
-  double V = 0.2;
-  double t = -1.0;
+  unsigned int l = 18;
+  unsigned int n = 9;
+  float V = 0.2;
+  float t = -1.0;
 
   Basis basis(l,n);
 
@@ -32,8 +32,18 @@ int main(int argc, char **argv)
 
   sparse_hamiltonian.construct_hamiltonian_matrix(V, t, l, n, int_basis);
 
-  // Now the matrix resides in host and device memory.
-  
+  // Now the matrix resides in host and device memory. 
+  cusp::array2d<VType, DSpace, cusp::row_major> mat(4,4,VType (1.0, 1.0));
+  cusp::array2d<VType, DSpace, cusp::row_major> exp_mat(4,4);
+
+  cublasHandle_t handle;
+  if(cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS){
+    throw cusp::runtime_exception("cublasCreate failed");
+  }
+
+  sparse_hamiltonian.expm_pade(exp_mat, mat, 4, 6, handle);
+
+  cublasDestroy(handle);
   delete [] int_basis;
   return 0;
 }

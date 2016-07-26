@@ -2,6 +2,13 @@
 #define __SPARSE_HAMILTONIAN_H
 
 #include <cusp/coo_matrix.h>
+#include <cusp/array2d.h>
+#include <cusp/array1d.h>
+#include <cusp/multiply.h>
+#include <cusp/elementwise.h>
+#include <cusp/blas/blas.h>
+#include <cusp/system/cuda/detail/cublas/blas.h>
+#include <cusp/linear_operator.h>
 #include <cusp/complex.h>
 #include <cusp/print.h>
 
@@ -13,7 +20,7 @@
 #include <cmath>
 
 typedef int IType;
-typedef cusp::complex<double> VType;
+typedef cusp::complex<float> VType;
 typedef cusp::device_memory DSpace;
 typedef cusp::host_memory HSpace;
 
@@ -31,12 +38,11 @@ class SparseHamiltonian
         long int len, long int value);
     void determine_allocation_details(const unsigned long long int *int_basis, unsigned int l,
         unsigned int &counter);
-    void construct_hamiltonian_matrix(double V, double t, unsigned int l,  
+    void construct_hamiltonian_matrix(float V, float t, unsigned int l,  
         unsigned int n, const unsigned long long int *int_basis);
-    //void print_hamiltonian();
     //double sign(double x);
-    //boost::numeric::ublas::matrix< std::complex<double> > 
-    //    expm_pade(boost::numeric::ublas::matrix< std::complex<double> > mat,unsigned int p);
+    void expm_pade(cusp::array2d<VType, DSpace> exp_mat,
+        cusp::array2d<VType, DSpace> mat, int n, unsigned int p, cublasHandle_t handle);
     //void expv_krylov_solve(double tv, boost::numeric::ublas::vector< std::complex<double> > &w,
     //        double &err, double &hump, 
     //            boost::numeric::ublas::vector< std::complex<double> > &v, 

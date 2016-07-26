@@ -123,7 +123,7 @@ void SparseHamiltonian::determine_allocation_details(const unsigned long long in
 /*******************************************************************************/
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
-void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigned int l, 
+void SparseHamiltonian::construct_hamiltonian_matrix(float V, float t, unsigned int l, 
     unsigned int n, const unsigned long long *int_basis) 
 {
   unsigned int num_entries;
@@ -138,7 +138,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
     boost::dynamic_bitset<> bs(l, int_basis[state]);
 
     // Loop over all sites of the bit representation
-    double v_term = 0.0;
+    float v_term = 0.0;
     bool passed = false;
     unsigned int saved_count;
     for(unsigned int site = 0; site < l; ++site){
@@ -175,7 +175,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
           
           ham_mat_host.row_indices[count] = match_ind1;
           ham_mat_host.column_indices[count] = state;
-          ham_mat_host.values[count] = cusp::complex<double> (0.0, t);
+          ham_mat_host.values[count] = VType (0.0, t);
           count++;
         }
       }
@@ -198,7 +198,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
           
           ham_mat_host.row_indices[count] = match_ind0;
           ham_mat_host.column_indices[count] = state;
-          ham_mat_host.values[count] = cusp::complex<double> (0.0, t);
+          ham_mat_host.values[count] = VType (0.0, t);
           count++;
         }
         // Otherwise do nothing
@@ -211,7 +211,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
     if(v_term != 0.0){
       ham_mat_host.row_indices[saved_count] = state;
       ham_mat_host.column_indices[saved_count] = state;
-      ham_mat_host.values[saved_count] = cusp::complex<double> (0.0, v_term);
+      ham_mat_host.values[saved_count] = VType (0.0, v_term);
     }
   }
 
@@ -222,15 +222,8 @@ void SparseHamiltonian::construct_hamiltonian_matrix(double V, double t, unsigne
   ham_mat_device.resize(basis_size_, basis_size_, num_entries);
   ham_mat_device = ham_mat_host;
 }
-#if 0
-/*******************************************************************************/
-// Uses boost's library for IO
-/*******************************************************************************/
-void SparseHamiltonian::print_hamiltonian()
-{
-  std::cout << ham_mat_ << std::endl;
-}
 
+#if 0
 /*******************************************************************************/
 // Returns the sign of a number
 /*******************************************************************************/
@@ -241,69 +234,91 @@ double SparseHamiltonian::sign(double x)
 
   return 0;
 }
+#endif
 
 /*******************************************************************************/
-// Computes matrix exponential using the Padé aproximation
+// Computes dense matrix exponential using the Padé aproximation
 /*******************************************************************************/
-boost::numeric::ublas::matrix< std::complex<double> >
-SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix< std::complex<double> > mat, 
-        unsigned int p)
+void SparseHamiltonian::expm_pade(cusp::array2d<VType, DSpace> exp_mat,
+    cusp::array2d<VType, DSpace> mat, int n, unsigned int p, cublasHandle_t handle)
 {
-  boost::numeric::ublas::matrix< std::complex<double> > exp_mat(mat.size1(), mat.size2());
- 
-  if(mat.size1() != mat.size2()){
-    std::cerr << "Pade approx error: mat.size1 != mat.size2" << std::endl; 
-    exit(1);
-  }
-  
-  unsigned int n = mat.size1();
-  boost::numeric::ublas::vector< std::complex<double> > c(p + 1);
-  c(0) = 1.0;
+  cusp::array1d<float, DSpace> c(p + 1);
+  c[0] = 1.0;
   for(unsigned int k = 1; k <= p; ++k)
-      c(k) = c(k - 1) * 
-          (static_cast<double>(p + 1 - k) / static_cast<double>(k * (2*p + 1 - k)));
+    c[k] = c[k - 1] * 
+      (static_cast<float>(p + 1 - k) / static_cast<float>(k * (2*p + 1 - k)));
 
-  // Computation of the inf norm of the hamiltonian matrix
-  double norm = 0.0;
+  // TODO check if this can be computed using the norm_inf from blas
+  // Computation of the inf norm of the dense matrix
+  float norm = 0.0;
   for(unsigned int ia = 0; ia < n; ++ia){
-    double tmp = 0.0;
+    float tmp = 0.0;
     for (unsigned int ja = 0; ja < n; ++ja){
-      tmp += std::abs(mat(ia, ja));
+      VType val0 = mat.values[ia * n + ja];
+      tmp += abs(val0);
     }
-    norm = std::max<double>(norm, tmp);
+    norm = std::max<float>(norm, tmp);
   }
 
   int s = 0;
   if(norm > 0.5){
     s = std::max(0.0, floor(std::log10(norm)/std::log10(2)) + 2);
     for(unsigned int ii = 0; ii < n; ++ii)
-      for(unsigned int jj = 0; jj < n; ++jj)
-          mat(ii,jj) = std::pow(2, -s) * mat(ii,jj);
+      for(unsigned int jj = 0; jj < n; ++jj){
+        VType val1 = mat.values[ii * n + jj];
+        mat(ii, jj) = static_cast<float>(std::pow(2, -s)) * val1;
+      }
   }
 
-  boost::numeric::ublas::identity_matrix< std::complex<double> > identity(n, n);
-  boost::numeric::ublas::matrix< std::complex<double> > mat2(n, n);
-  mat2 = boost::numeric::ublas::prod(mat, mat);
-  
-  boost::numeric::ublas::matrix< std::complex<double> > q_mat(n, n);
-  boost::numeric::ublas::matrix< std::complex<double> > p_mat(n, n);
+  cusp::array2d<VType, DSpace> mat2(mat.num_rows, mat.num_cols);
+  cusp::blas::gemm(cusp::cuda::par.with(handle), mat, mat, mat2);
 
-  q_mat.assign(c(p) * identity);
-  p_mat.assign(c(p - 1) * identity);
+  cusp::array2d<VType, DSpace> q_mat(n, n, VType (0.0,0.0)); 
+  cusp::array2d<VType, DSpace> p_mat(n, n, VType (0.0,0.0)); 
 
+  for(unsigned int id = 0; id < n; ++id)
+    for(unsigned int jd = 0; jd < n; ++jd){
+      if(id == jd){
+        q_mat(id, jd) = c[p];
+        p_mat(id, jd) = c[p - 1];
+      }
+    }
+
+  //TODO add from cusp algorithms?
   int odd = 1;
   for(unsigned int i = p - 1; i > 0; --i){
-    (odd == 1) ?
-      (q_mat = boost::numeric::ublas::prod(q_mat, mat2) + c(i - 1) * identity):
-      (p_mat = boost::numeric::ublas::prod(p_mat, mat2) + c(i - 1) * identity);
+    if(odd == 1){
+      cusp::blas::gemm(cusp::cuda::par.with(handle), q_mat, mat2, q_mat);
+      for(unsigned int id = 0; id < n; ++id)
+        for(unsigned int jd = 0; jd < n; ++jd){
+          if(id == jd){
+            VType val1 = q_mat.values[id * n + jd];
+            float add1 = c[i - 1];
+            q_mat(id, jd) = val1 + add1;
+          }
+        }
+    }
+    else{
+      cusp::blas::gemm(cusp::cuda::par.with(handle), p_mat, mat2, p_mat);
+      for(unsigned int id = 0; id < n; ++id)
+        for(unsigned int jd = 0; jd < n; ++jd){
+          if(id == jd){
+            VType val2 = p_mat.values[id * n + jd];
+            float add2 = c[i - 1];
+            p_mat(id, jd) = val2 + add2;
+          }
+        }
+    }
     odd = 1 - odd;
   }
 
   (odd == 1) ?
-    (q_mat = boost::numeric::ublas::prod(q_mat, mat)):
-    (p_mat = boost::numeric::ublas::prod(p_mat, mat));
-  q_mat -= p_mat;
+    (cusp::blas::gemm(cusp::cuda::par.with(handle), q_mat, mat, q_mat)):
+    (cusp::blas::gemm(cusp::cuda::par.with(handle), p_mat, mat, p_mat));
 
+  cusp::subtract(q_mat, p_mat, q_mat); 
+
+#if 0
   // Implement matrix inversion by means of uBlas LU-decomposition backsubstitution
   boost::numeric::ublas::permutation_matrix<double> perm_mat(n);
   int res = boost::numeric::ublas::lu_factorize(q_mat, perm_mat);
@@ -323,10 +338,9 @@ SparseHamiltonian::expm_pade(boost::numeric::ublas::matrix< std::complex<double>
   // Final result is squared
   for(int j = 0; j < s; ++j)
     exp_mat = boost::numeric::ublas::prod(exp_mat, exp_mat);
-
-  return exp_mat;
+#endif
 }
-
+#if 0
 /*******************************************************************************/
 // Computes matrix exponential using the Krylov method
 // Relies on the computation of the matrix exponential using Padé aproximation
