@@ -20,8 +20,9 @@ class SparseHamiltonian
     PetscMPIInt mpirank_, mpisize_;
     MFN mfn_;
     FN f_;
-    void determine_allocation_details_(PetscInt *int_basis, 
-        const PetscInt m, int start, int end, PetscInt *diag, PetscInt *off);
+    void determine_allocation_details_(PetscInt *int_basis, Vec &collective, 
+        PetscInt &low, PetscInt &high, const PetscInt m, PetscInt start, PetscInt end, 
+            PetscInt *diag, PetscInt *off);
     inline PetscInt find_outside_(const PetscInt value);
   public:
     SparseHamiltonian(PetscInt basis_size, unsigned int l, unsigned int n, 
@@ -32,7 +33,7 @@ class SparseHamiltonian
     inline PetscInt binary_to_int(boost::dynamic_bitset<> bs);
     inline PetscInt binsearch(const PetscInt *array, PetscInt len, PetscInt value);
     void construct_hamiltonian_matrix(PetscInt *int_basis, 
-        double V, double t, int nlocal, int start, int end);
+        double V, double t, PetscInt nlocal, PetscInt start, PetscInt end);
     void print_hamiltonian();
     void expv_krylov_solve(const double tv, const double tol, const int maxits, Vec &w, Vec &v);
     void time_evolution(const unsigned int iterations, const double *times, 

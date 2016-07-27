@@ -13,8 +13,13 @@ full_dist:
 	$(MAKE) -C src/parallel-petsc-slepc/full_dist/
 	mv src/parallel-petsc-slepc/full_dist/full_dist.x .
 
+master:
+	$(MAKE) -C src/parallel-petsc-slepc/master_scatter/
+	mv src/parallel-petsc-slepc/master_scatter/master.x .
+
 clean:
 	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/master_scatter/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/full_dist/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/replicated_basis/ clean
 	rm -r *.x 

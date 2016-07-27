@@ -8,8 +8,8 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 4;
-  unsigned int n = 2;
+  unsigned int l = 32;
+  unsigned int n = 16;
   double V = 0.2;
   double t = -1.0;
 
@@ -55,9 +55,9 @@ int main(int argc, char **argv)
   PetscInt *int_basis = new PetscInt[basis_local];
   basis.construct_int_basis(int_basis, basis_local, start, end);
   
-  std::cout << "Proc " << mpirank << std::endl;
-  std::cout << "Here's the basis in int notation:" << std::endl;
-  for(unsigned int i=0;i<basis_local;++i) std::cout << int_basis[i] << std::endl;
+  //std::cout << "Proc " << mpirank << std::endl;
+  //std::cout << "Here's the basis in int notation:" << std::endl;
+  //for(unsigned int i=0;i<basis_local;++i) std::cout << int_basis[i] << std::endl;
 
   // An example of how to populate vectors
   //PetscComplex z;
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   // The int_basis is not required anymore, so let's reclaim some precious memory
   delete [] int_basis;
 
-  sparse_hamiltonian.print_hamiltonian();
+  //sparse_hamiltonian.print_hamiltonian();
  
   // Initial vector
   //if(sparse_hamiltonian.get_mpirank() == 0){  
@@ -115,10 +115,11 @@ int main(int argc, char **argv)
 
   /*** Time evolution ***/
   PetscTime(&kryt1);
-  
-  const int iterations = 20;
+ 
+  const int iterations = 33;
   double times[iterations + 1] 
-      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
+      = {0.0,0.0001,0.00025,0.0005,0.001,0.0025,0.005,0.01,0.025,0.05,0.06,0.07,0.08,0.09,
+        0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
   
   double *loschmidt = new double[iterations + 1]; 
 

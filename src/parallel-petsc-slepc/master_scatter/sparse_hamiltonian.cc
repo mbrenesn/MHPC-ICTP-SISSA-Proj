@@ -113,9 +113,15 @@ PetscInt SparseHamiltonian::find_outside_(const PetscInt value)
 // Determines the sparsity pattern to allocate memory only for the non-zero 
 // entries of the matrix
 /*******************************************************************************/
-void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis, 
-    const PetscInt m, int start, int end, PetscInt *diag, PetscInt *off)
+void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis, Vec &collective, 
+    PetscInt &low, PetscInt &high, const PetscInt m, PetscInt start, PetscInt end, 
+        PetscInt *diag, PetscInt *off)
 {
+  std::vector<PetscInt> cont;
+  cont.reserve(basis_size_ / mpisize_);
+  std::vector<PetscInt> st;
+  st.reserve(basis_size_ / mpisize_);
+
   for(int i = 0; i < m; ++i) diag[i] = 1;
 
   for(PetscInt state = start; state < end; ++state){
@@ -144,39 +150,21 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
 
           PetscInt new_int1 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          MPI_Status stat;
-          PetscInt match_ind1, send;
-          PetscInt recv = -1;
+          PetscInt match_ind1;
           if(mpirank_){
-            //match_ind1 = binsearch(int_basis, m, new_int1);
-
-            //if(match_ind1 == -1){
-              MPI_Sendrecv(&new_int1, 1, MPI_LONG_LONG, 0, 1, &recv, 1, MPI_LONG_LONG, 
-                0, MPI_ANY_TAG, PETSC_COMM_WORLD, &stat);
-            //}
-            //else
-            //  match_ind1 += start;
+            match_ind1 = binsearch(int_basis, m, new_int1); 
+            if(match_ind1 == -1){
+              cont.push_back(new_int1);
+              st.push_back(state);
+              continue;
+            }
+            else{
+              match_ind1 += start;
+            }
           }
-          else if(mpirank_ == 0 && mpisize_ != 1){
+          else
             match_ind1 = binsearch(int_basis, basis_size_, new_int1);
-            
-            MPI_Recv(&recv, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, PETSC_COMM_WORLD,
-              &stat);
-            
-            send = binsearch(int_basis, basis_size_, recv);
 
-            MPI_Send(&send, 1, MPI_LONG_LONG, stat.MPI_SOURCE, send, PETSC_COMM_WORLD);
-          }
-          else{
-            match_ind1 = binsearch(int_basis, basis_size_, new_int1);
-          }
-
-          if(mpirank_ && recv != -1) match_ind1 = recv;
-
-          if(match_ind1 == -1){
-            std::cerr << "Error in the binary search within the Ham mat alloc details" << std::endl;
-            exit(1);
-          }
           if(match_ind1 < end && match_ind1 >= start) diag[state - start]++;
           else off[state - start]++; 
         }
@@ -192,17 +180,20 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
 
           PetscInt new_int0 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind0 = binsearch(int_basis, m, new_int0); 
-          if(match_ind0 == -1){
-            match_ind0 = this->find_outside_(new_int0);
+          PetscInt match_ind0;
+          if(mpirank_){
+            match_ind0 = binsearch(int_basis, m, new_int0); 
+            if(match_ind0 == -1){
+              cont.push_back(new_int0);
+              st.push_back(state);
+              continue;
+            }
+            else{
+              match_ind0 += start;
+            }
           }
-          else{
-            match_ind0 += start;
-          }
-          if(match_ind0 == -1){
-            std::cerr << "Error in the binary search within the Ham mat alloc details" << std::endl;
-            exit(1);
-          } 
+          else
+            match_ind0 = binsearch(int_basis, basis_size_, new_int0);
           
           if(match_ind0 < end && match_ind0 >= start) diag[state - start]++;
           else off[state - start]++;
@@ -218,8 +209,71 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
     if(counter == false) diag[state - start]--;
   }
 
+  // Create a 'collective' vector that needs to be moved to root process
+  // to evaluate the matching indices
+  PetscScalar val;
+  PetscInt i_global;
+  PetscInt l_size = cont.size();
+  VecCreate(PETSC_COMM_WORLD, &collective);
+  VecSetSizes(collective, cont.size(), PETSC_DETERMINE);
+  VecSetType(collective, VECMPI);
+  VecGetOwnershipRange(collective, &low, &high);
+
+  for(PetscInt i = 0; i < l_size; ++i){
+    i_global = i + low;
+    val = static_cast<PetscScalar> (cont[i]); 
+    VecSetValues(collective, 1, &i_global, &val, INSERT_VALUES);
+  }
+
+  VecAssemblyBegin(collective);
+  VecAssemblyEnd(collective);
+  
+  // Gather the collective vector to root process and modify it's values
+  // with the corresponding matching indices
+  VecScatter ctx;
+  Vec c_ints;
+  PetscInt c_ints_size;
+
+  VecScatterCreateToZero(collective, &ctx, &c_ints);
+  VecScatterBegin(ctx, collective, c_ints, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(ctx, collective, c_ints, INSERT_VALUES, SCATTER_FORWARD);
+
+  if(mpirank_ == 0){
+    VecGetLocalSize(c_ints, &c_ints_size);
+
+    PetscScalar search, match_set;
+    PetscInt match;
+    for(PetscInt i = 0; i < c_ints_size; ++i){
+      VecGetValues(c_ints, 1, &i, &search);
+      match = binsearch(int_basis, basis_size_, static_cast<PetscInt> (PetscRealPart(search)));
+      match_set = match;
+      VecSetValues(collective, 1, &i, &match_set, INSERT_VALUES);
+    }
+  }
+
+  VecAssemblyBegin(collective);
+  VecAssemblyEnd(collective);
+ 
+  // Now all the processes contain a vector of matching indices gathered from
+  // the root process
+  PetscInt match_index, st_c;
+  for(PetscInt i = 0; i < l_size; ++i){
+    i_global = i + low;
+    VecGetValues(collective, 1, &i_global, &val);
+    match_index = static_cast<PetscInt> (PetscRealPart(val));
+ 
+    st_c = st[i];
+    if(match_index < end && match_index >= start) diag[st_c - start]++;
+    else off[st_c - start]++;
+  }
+
+  MPI_Barrier(PETSC_COMM_WORLD);
+
+  VecDestroy(&c_ints);
+  VecScatterDestroy(&ctx);
+
   // In case visualization of the allocation buffers is required
-  /* 
+  /*
   std::cout << "Diag" << "\t" << "Proc" << mpirank_ << std::endl;
   for(int j = 0; j < m; ++j){
     std::cout << diag[j] << std::endl;
@@ -228,25 +282,28 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
   for(int j = 0; j < m; ++j){
     std::cout << off[j] << std::endl;
   }
-  */ 
+ */ 
 }
 
 /*******************************************************************************/
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
 void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis, 
-    double V, double t, int nlocal, int start, int end)
+    double V, double t, PetscInt nlocal, PetscInt start, PetscInt end)
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
   // have in the diagonal submatrix and the offdiagonal submatrices for each process
 
   // Allocating memory only for the non-zero entries of the matrix
+  Vec collective;
+  PetscInt low, high;
   PetscInt *d_nnz, *o_nnz;
   PetscCalloc1(nlocal, &d_nnz);
   PetscCalloc1(nlocal, &o_nnz);
 
-  this->determine_allocation_details_(int_basis, nlocal, start, end, d_nnz, o_nnz);
-  
+  this->determine_allocation_details_(int_basis, collective, low, high,
+    nlocal, start, end, d_nnz, o_nnz);
+
   // Create the Hamiltonian matrix
   MatCreate(PETSC_COMM_WORLD, &ham_mat_);
   MatSetSizes(ham_mat_, nlocal, nlocal, basis_size_, basis_size_);
@@ -262,6 +319,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
   PetscComplex ti = t * PETSC_i;
   // Off-diagonal elements: the 't' terms
   // Grab 1 of the states and turn it into bit representation
+  PetscInt in_counter = 0;
   for(PetscInt state = start; state < end; ++state){
     
     boost::dynamic_bitset<> bs(l_, int_basis[state - start]);
@@ -288,18 +346,28 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
 
           PetscInt new_int1 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind1 = binsearch(int_basis, nlocal, new_int1); 
-          if(match_ind1 == -1){
-            match_ind1 = this->find_outside_(new_int1);
+          PetscInt match_ind1;
+          if(mpirank_){
+            match_ind1 = binsearch(int_basis, nlocal, new_int1); 
+            if(match_ind1 == -1){
+              PetscScalar val;
+              PetscInt index = in_counter + low;
+              VecGetValues(collective, 1, &index, &val);
+            
+              match_ind1 = static_cast<PetscInt>(PetscRealPart(val));
+              in_counter++;
+            }
+            else{
+              match_ind1 += start;
+            }
           }
-          else{
-            match_ind1 += start;
-          }
+          else
+            match_ind1 = binsearch(int_basis, basis_size_, new_int1);
           if(match_ind1 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);
           } 
-          
+  
           MatSetValues(ham_mat_, 1, &match_ind1, 1, &state, &ti, ADD_VALUES);
         }
       }
@@ -314,13 +382,23 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
 
           PetscInt new_int0 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind0 = binsearch(int_basis, nlocal, new_int0); 
-          if(match_ind0 == -1){
-            match_ind0 = this->find_outside_(new_int0);
+          PetscInt match_ind0;
+          if(mpirank_){
+            match_ind0 = binsearch(int_basis, nlocal, new_int0); 
+            if(match_ind0 == -1){
+              PetscScalar val;
+              PetscInt index = in_counter + low;
+              VecGetValues(collective, 1, &index, &val);
+            
+              match_ind0 = static_cast<PetscInt>(PetscRealPart(val));
+              in_counter++;
+            }
+            else{
+              match_ind0 += start;
+            }
           }
-          else{
-            match_ind0 += start;
-          }
+          else
+            match_ind0 = binsearch(int_basis, basis_size_, new_int0);
           if(match_ind0 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);
@@ -340,6 +418,8 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
   MatAssemblyEnd(ham_mat_, MAT_FINAL_ASSEMBLY);
 
   MatSetOption(ham_mat_, MAT_SYMMETRIC, PETSC_TRUE);
+
+  VecDestroy(&collective);
 }
 
 /*******************************************************************************/
