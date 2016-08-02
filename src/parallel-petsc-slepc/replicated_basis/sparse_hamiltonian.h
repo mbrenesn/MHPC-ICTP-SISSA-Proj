@@ -10,27 +10,30 @@
 
 #include <slepcmfn.h>
 
+typedef unsigned long long int ULLInt;
+typedef long long int LLInt;
+
 class SparseHamiltonian
 {
   private:
-    PetscInt basis_size_;
+    LLInt basis_size_;
     unsigned int l_, n_;
     Mat ham_mat_;
     Vec vec_help_;
     PetscMPIInt mpirank_, mpisize_;
     MFN mfn_;
     FN f_;
-    void determine_allocation_details_(PetscInt *int_basis, 
+    void determine_allocation_details_(LLInt *int_basis, 
         const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off);
   public:
-    SparseHamiltonian(PetscInt basis_size, unsigned int l, unsigned int n, 
+    SparseHamiltonian(LLInt basis_size, unsigned int l, unsigned int n, 
         int argc, char **argv);
     ~SparseHamiltonian();
     PetscMPIInt get_mpisize();
     PetscMPIInt get_mpirank();
-    inline PetscInt binary_to_int(boost::dynamic_bitset<> bs);
-    inline PetscInt binsearch(const PetscInt *array, PetscInt len, PetscInt value);
-    void construct_hamiltonian_matrix(PetscInt *int_basis, 
+    inline LLInt binary_to_int(boost::dynamic_bitset<> bs);
+    inline LLInt binsearch(const LLInt *array, LLInt len, LLInt value);
+    void construct_hamiltonian_matrix(LLInt *int_basis, 
         double V, double t, PetscInt nlocal, PetscInt start, PetscInt end);
     void print_hamiltonian();
     void expv_krylov_solve(const double tv, const double tol, const int maxits, Vec &w, Vec &v);

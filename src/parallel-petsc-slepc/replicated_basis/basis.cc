@@ -13,7 +13,7 @@ Basis::~Basis()
 /*******************************************************************************/
 // Helper function.
 /*******************************************************************************/
-PetscInt Basis::factorial_(unsigned int n)
+LLInt Basis::factorial_(unsigned int n)
 {
   return (n == 1 || n == 0) ? 1 : factorial_(n - 1) * n;
 }
@@ -26,7 +26,7 @@ PetscInt Basis::factorial_(unsigned int n)
 // igned long long integers. Instead we can use the following expression to
 // compute the size of the system.
 /*******************************************************************************/
-PetscInt Basis::basis_size()
+LLInt Basis::basis_size()
 {
   double size = 1.0;
   for(unsigned int i = 1; i <= (l_ - n_); ++i){
@@ -40,9 +40,9 @@ PetscInt Basis::basis_size()
 // Returns the smallest possible integer that can be expressed with a given
 // binary combination.
 /*******************************************************************************/
-PetscInt Basis::first_int()
+LLInt Basis::first_int()
 {
-  PetscInt first = 0;
+  LLInt first = 0;
   for(unsigned int i = 0; i < n_; ++i){
     first += 1 << i;
   }
@@ -57,16 +57,16 @@ PetscInt Basis::first_int()
 // returns an array which contains all possible combinations represented as
 // integer values.
 /*******************************************************************************/
-void Basis::construct_int_basis(PetscInt *int_basis)
+void Basis::construct_int_basis(LLInt *int_basis)
 {
-  PetscInt w;                                         // Next permutation of bits
-  PetscInt first = first_int();
-  PetscInt size = basis_size();
+  LLInt w;                                         // Next permutation of bits
+  LLInt first = first_int();
+  LLInt size = basis_size();
 
   int_basis[0] = first;
 
-  for(PetscInt i = 1; i < size; ++i){
-    PetscInt t = (first | (first - 1)) + 1;
+  for(LLInt i = 1; i < size; ++i){
+    LLInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     
     int_basis[i] = w;
@@ -81,10 +81,10 @@ void Basis::construct_int_basis(PetscInt *int_basis)
 // See Pieterse, et al. (2010) for a reference
 /*******************************************************************************/
 void Basis::construct_bit_basis(boost::dynamic_bitset<> *bit_basis, 
-    PetscInt *int_basis)
+    LLInt *int_basis)
 {
-  PetscInt size = basis_size();
-  for(PetscInt i = 0; i < size; ++i){
+  LLInt size = basis_size();
+  for(LLInt i = 0; i < size; ++i){
     boost::dynamic_bitset<> bs(l_, int_basis[i]);
     bit_basis[i] = bs;
   }

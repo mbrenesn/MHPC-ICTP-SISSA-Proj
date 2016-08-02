@@ -1,6 +1,6 @@
 #include "sparse_hamiltonian.h"
 
-SparseHamiltonian::SparseHamiltonian(PetscInt basis_size, unsigned int l, 
+SparseHamiltonian::SparseHamiltonian(LLInt basis_size, unsigned int l, 
     unsigned int n, int argc, char **argv)
 {   
   SlepcInitialize(&argc, &argv, 0, 0); 
@@ -33,13 +33,13 @@ PetscMPIInt SparseHamiltonian::get_mpirank()
 }
 
 inline
-PetscInt SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> bs)
+LLInt SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> bs)
 {
-  PetscInt integer = 0;
+  LLInt integer = 0;
 
   for(unsigned int i = 0; i < l_; ++i){
     if(bs[i] == 1){
-      integer += 1 << i;
+      integer += 1ULL << i;
     }
   }
 
@@ -52,15 +52,15 @@ PetscInt SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> bs)
 // binary search will perform better for large systems
 /*******************************************************************************/
 inline
-PetscInt SparseHamiltonian::binsearch(const PetscInt *array, PetscInt len, PetscInt value)
+LLInt SparseHamiltonian::binsearch(const LLInt *array, LLInt len, LLInt value)
 {
   if(len == 0) return -1;
-  PetscInt mid = len / 2;
+  LLInt mid = len / 2;
 
   if(array[mid] == value) 
     return mid;
   else if(array[mid] < value){
-    PetscInt result = binsearch(array + mid + 1, len - (mid + 1), value);
+    LLInt result = binsearch(array + mid + 1, len - (mid + 1), value);
     if(result == -1) 
       return -1;
     else
@@ -74,7 +74,7 @@ PetscInt SparseHamiltonian::binsearch(const PetscInt *array, PetscInt len, Petsc
 // Determines the sparsity pattern to allocate memory only for the non-zero 
 // entries of the matrix
 /*******************************************************************************/
-void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis, 
+void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, 
     const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off)
 {
   for(PetscInt i = 0; i < m; ++i) diag[i] = 1;
@@ -103,9 +103,9 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
           bitset[next_site1] = 1;
           bitset[site]       = 0;
 
-          PetscInt new_int1 = binary_to_int(bitset);
+          LLInt new_int1 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
+          LLInt match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
           if(match_ind1 == -1){
             std::cerr << "Error in the binary search within the Ham mat alloc details" << std::endl;
             exit(1);
@@ -123,9 +123,9 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
           bitset[next_site0] = 0;
           bitset[site]       = 1;
 
-          PetscInt new_int0 = binary_to_int(bitset);
+          LLInt new_int0 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
+          LLInt match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
           if(match_ind0 == -1){
             std::cerr << "Error in the binary search within the Ham mat alloc details" << std::endl;
             exit(1);
@@ -161,7 +161,7 @@ void SparseHamiltonian::determine_allocation_details_(PetscInt *int_basis,
 /*******************************************************************************/
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
-void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis, 
+void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis, 
     double V, double t, PetscInt nlocal, PetscInt start, PetscInt end)
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
@@ -213,9 +213,9 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
           bitset[next_site1] = 1;
           bitset[site]       = 0;
 
-          PetscInt new_int1 = binary_to_int(bitset);
+          LLInt new_int1 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
+          LLInt match_ind1 = binsearch(int_basis, basis_size_, new_int1); 
           if(match_ind1 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);
@@ -233,9 +233,9 @@ void SparseHamiltonian::construct_hamiltonian_matrix(PetscInt *int_basis,
           bitset[next_site0] = 0;
           bitset[site]       = 1;
 
-          PetscInt new_int0 = binary_to_int(bitset);
+          LLInt new_int0 = binary_to_int(bitset);
           // Loop over all states and look for a match
-          PetscInt match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
+          LLInt match_ind0 = binsearch(int_basis, basis_size_, new_int0); 
           if(match_ind0 == -1){
             std::cerr << "Error in the binary search within the Ham mat construction" << std::endl;
             exit(1);

@@ -8,18 +8,21 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 32;
-  unsigned int n = 16;
+  //PetscLogDouble mem = 0.0;
+
+  unsigned int l = 18;
+  unsigned int n = 9;
   double V = 0.2;
   double t = -1.0;
 
   // Let's construct the int basis that is required to construct the Hamiltonian matrix
   Basis basis(l,n);
-  PetscInt *int_basis = new PetscInt[basis.basis_size()];
+  LLInt *int_basis = new LLInt[basis.basis_size()];
   basis.construct_int_basis(int_basis);
   
-  //std::cout << "Here's the basis in int notation:" << std::endl;
-  //for(unsigned int i=0;i<nlocal;++i) std::cout << int_basis[i] << std::endl;
+  //std::cout << "After constructing integer basis" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
   
   // Sparse hamiltonian testing zone
   
@@ -31,6 +34,15 @@ int main(int argc, char **argv)
   PetscTime(&time1);
  
   SparseHamiltonian sparse_hamiltonian(basis.basis_size(), l, n, argc, argv);
+  
+  //if(sparse_hamiltonian.get_mpirank() == 0){
+  //  std::cout << "Here's the basis in int notation:" << std::endl;
+  //  for(unsigned int i=0;i<basis.basis_size();++i) std::cout << int_basis[i] << std::endl;
+  //}
+
+  //std::cout << "After creating SparseHamiltonian instance" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
 
   // Declare vectors and parameters
   Vec w;
@@ -90,9 +102,17 @@ int main(int argc, char **argv)
   sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,nlocal,start,end);
   PetscTime(&constt2);
 
+  //std::cout << "After constructing Hamiltonian matrix" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+  
   // The int_basis is not required anymore, so let's reclaim some precious memory
   delete [] int_basis;
 
+  //std::cout << "After deallocating int basis" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+  
   //sparse_hamiltonian.print_hamiltonian();
  
   // Initial vector
@@ -106,10 +126,9 @@ int main(int argc, char **argv)
   /*** Time evolution ***/
   PetscTime(&kryt1);
   
-  const int iterations = 33;
+  const int iterations = 20;
   double times[iterations + 1] 
-      = {0.0,0.0001,0.00025,0.0005,0.001,0.0025,0.005,0.01,0.025,0.05,0.06,0.07,0.08,0.09,
-        0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
+      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
   
   double *loschmidt = new double[iterations + 1]; 
 
@@ -117,6 +136,10 @@ int main(int argc, char **argv)
 
   PetscTime(&kryt2);
   /*** End time evolution ***/
+  
+  //std::cout << "After time evolution" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
 
   // Final vector
   //if(sparse_hamiltonian.get_mpirank() == 0)  
@@ -148,5 +171,9 @@ int main(int argc, char **argv)
   VecDestroy(&v);  
   VecDestroy(&w);
   delete [] loschmidt;
+  
+  //std::cout << "At program completion" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
   return 0;
 }
