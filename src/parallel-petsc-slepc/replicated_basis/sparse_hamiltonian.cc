@@ -324,6 +324,9 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
   VecDot(v, v, &l_echo);
   loschmidt[0] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
       + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
+
+  if(mpirank_ == 0)
+    std::cout << "Time" << "\t" << "Loschmidt echo" << std::endl;
   for(unsigned int tt = 1; tt < (iterations + 1); ++tt){
   
     FNSetScale(f_, times[tt] - times[tt - 1], 1.0);
@@ -341,6 +344,8 @@ void SparseHamiltonian::time_evolution(const unsigned int iterations, const doub
     loschmidt[tt] = (PetscRealPart(l_echo) * PetscRealPart(l_echo))
         + (PetscImaginaryPart(l_echo) * PetscImaginaryPart(l_echo));
 
+    if(mpirank_ == 0)
+      std::cout << times[tt] << "\t" << loschmidt[tt] << std::endl;
 #ifdef NORMCHECK
     VecNorm(w, NORM_2, &normcheck);
     if(normcheck > 1.001 || normcheck < 0.999){
