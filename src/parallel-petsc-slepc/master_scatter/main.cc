@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 {
   //PetscLogDouble mem = 0.0;
 
-  unsigned int l = 18;
-  unsigned int n = 9;
+  unsigned int l = 8;
+  unsigned int n = 4;
   double V = 0.2;
   double t = -1.0;
 
@@ -27,6 +27,14 @@ int main(int argc, char **argv)
  
   SparseHamiltonian sparse_hamiltonian(basis.basis_size(), l, n, argc, argv);
 
+  if(sparse_hamiltonian.get_mpirank() == 0){  
+    std::cout << "Hardcore bosons" << std::endl;    
+    std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
+    std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
+    std::cout << "Size of the Hilbert space:" << std::endl;
+    std::cout << basis.basis_size() << std::endl;
+  }
+    
   //std::cout << "After creating SparseHamiltonian instance" << std::endl;
   //PetscMemoryGetCurrentUsage(&mem);
   //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
@@ -156,19 +164,10 @@ int main(int argc, char **argv)
   PetscTime(&time2);
 
   if(sparse_hamiltonian.get_mpirank() == 0){  
-    std::cout << "Hardcore bosons" << std::endl;    
-    std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
-    std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
-    std::cout << "Size of the Hilbert space:" << std::endl;
-    std::cout << basis.basis_size() << std::endl;
     std::cout << "L2 norm of the final state vec: " << norm << std::endl; 
     std::cout << "Time Construction: " << constt2 - constt1 << " seconds" << std::endl; 
     std::cout << "Time Krylov Evolution: " << kryt2 - kryt1 << " seconds" << std::endl;
     std::cout << "Number of iterations: " << iterations << std::endl;
-    std::cout << "Times used for evolution: " << std::endl; 
-    std::cout << "Time" << "\t" << "Loschmidt echo" << std::endl;
-    for(unsigned int i = 0; i <= iterations; ++i)
-      std::cout << times[i] << "\t" << loschmidt[i] << std::endl;
     std::cout << "Time total: " << time2 - time1 << " seconds" << std::endl; 
   }
 
