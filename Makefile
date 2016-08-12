@@ -17,8 +17,18 @@ master:
 	$(MAKE) -C src/parallel-petsc-slepc/master_scatter/
 	mv src/parallel-petsc-slepc/master_scatter/master.x .
 
+comm:
+	$(MAKE) -C src/parallel-petsc-slepc/single_comm/
+	mv src/parallel-petsc-slepc/single_comm/comm.x .
+
+comm_node:
+	$(MAKE) -C src/parallel-petsc-slepc/comm_full/
+	mv src/parallel-petsc-slepc/comm_full/comm_node.x .
+
 clean:
 	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/comm_full/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/single_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/master_scatter/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/full_dist/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/replicated_basis/ clean
