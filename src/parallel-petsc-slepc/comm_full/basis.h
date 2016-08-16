@@ -21,6 +21,6 @@ class Basis
         PetscInt start);
     void construct_bit_basis(boost::dynamic_bitset<> *bit_basis, 
             LLInt *int_basis, PetscInt nlocal);
-    PetscInt basis_size();
+    LLInt basis_size();
 };
 #endif
