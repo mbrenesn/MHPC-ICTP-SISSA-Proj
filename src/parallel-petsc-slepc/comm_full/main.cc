@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 {
   //PetscLogDouble mem = 0.0;
 
-  unsigned int l = 32;
-  unsigned int n = 16;
+  unsigned int l = 18;
+  unsigned int n = 9;
   double V = 0.2;
   double t = -1.0;
 
@@ -89,33 +89,17 @@ int main(int argc, char **argv)
   //std::cout << "Here's the basis in int notation:" << std::endl;
   //for(unsigned int i=0;i<basis_local;++i) std::cout << int_basis[i] << std::endl;
 
-  // An example of how to populate vectors
-  //PetscComplex z;
-  //for(int ii = start; ii < end; ++ii){
-  //  z = std::complex<double>(ii+1,0); 
-  //  VecSetValues(v, 1, &ii, &z, INSERT_VALUES);
-  //}
+  // Populate the initial vector with either a normalized random initial state or a Neel state
+
+  /*****/
 
   // Random population of the initial vector
-  PetscRandom rctx;
-  PetscRandomCreate(PETSC_COMM_WORLD, &rctx);
-  PetscRandomSetType(rctx, PETSCRAND);
+  //sparse_hamiltonian.random_initial_vec(v);
 
-  PetscRandomSetInterval(rctx, 0.0, 1.0);
-  PetscRandomSeed(rctx);
+  // Neel initial vector
+  sparse_hamiltonian.neel_initial_vec(v, int_basis, basis_local);
 
-  VecSetRandom(v, rctx);
-
-  PetscRandomDestroy(&rctx);
-
-  VecAssemblyBegin(v);  
-  VecAssemblyEnd(v);
-
-  // Normalize the initial vector
-  PetscReal norm_initial;
-  VecNorm(v, NORM_2, &norm_initial);
-
-  VecNormalize(v, &norm_initial);
+  /*****/
 
   // Construct a time evolution vector in the same manner as the initial vector
   // was constructed. Values are NOT copied over.

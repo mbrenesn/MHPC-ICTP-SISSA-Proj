@@ -88,6 +88,62 @@ LLInt SparseHamiltonian::binsearch(const LLInt *array, LLInt len, LLInt value)
 }
 
 /*******************************************************************************/
+// Initial vector filled with random numbers using the Petsc rand environment.
+// The initial state will change depending on the number of MPI processes used
+// in this case
+/*******************************************************************************/
+void SparseHamiltonian::random_initial_vec(Vec &initial)
+{
+  PetscRandom rctx;
+  PetscRandomCreate(PETSC_COMM_WORLD, &rctx);
+  PetscRandomSetType(rctx, PETSCRAND);
+
+  PetscRandomSetInterval(rctx, 0.0, 1.0);
+  PetscRandomSeed(rctx);
+
+  VecSetRandom(initial, rctx);
+
+  PetscRandomDestroy(&rctx);
+
+  VecAssemblyBegin(initial);  
+  VecAssemblyEnd(initial); 
+
+  // Normalize the initial vector
+  PetscReal norm_initial;
+  VecNorm(initial, NORM_2, &norm_initial);
+
+  VecNormalize(initial, &norm_initial);
+}
+
+/*******************************************************************************/
+// Initial Neel state vector.
+/*******************************************************************************/
+void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt *int_basis, PetscInt n)
+{
+  if(l_ / 2 != n_){
+    std::cerr << "Not implemented!" << std::endl;
+    std::cerr << "The Neel state has only been implemented for half-filled systems" << std::endl;
+    exit(1);
+  }
+
+  boost::dynamic_bitset<> neel(l_, 1);
+  for(unsigned int site = 0; site < l_; site += 2){
+    neel.set(site);
+  }
+
+  VecZeroEntries(initial);
+
+  if(mpirank_ == 0){
+    LLInt neel_int = binary_to_int(neel);
+    LLInt index = binsearch(int_basis, n, neel_int);
+    VecSetValue(initial, index, 1.0, INSERT_VALUES);
+  }
+
+  VecAssemblyBegin(initial);
+  VecAssemblyEnd(initial);
+}
+
+/*******************************************************************************/
 // Determines the sparsity pattern to allocate memory only for the non-zero 
 // entries of the matrix
 /*******************************************************************************/
