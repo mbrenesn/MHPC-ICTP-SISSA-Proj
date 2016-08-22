@@ -21,23 +21,25 @@ int main(int argc, char **argv)
   // Invoke the constructor with the basis size. The constructor will initialize PETSc
   // and create an instance of the PETSc MatMPIAIJ matrix type. This will also initialize
   // the MPI environment
+  LLInt basis_size = basis.basis_size();
+  
+  SparseHamiltonian sparse_hamiltonian(basis_size, l, n, argc, argv);
+  
   PetscLogDouble time1, time2;
 
   PetscTime(&time1);
-
-  LLInt basis_size = basis.basis_size();
-
-  SparseHamiltonian sparse_hamiltonian(basis_size, l, n, argc, argv);
  
   //PetscMPIInt mpirank = sparse_hamiltonian.get_mpirank();
-  //PetscMPIInt mpisize = sparse_hamiltonian.get_mpisize();
+  PetscMPIInt mpisize = sparse_hamiltonian.get_mpisize();
   
   PetscMPIInt node_rank = sparse_hamiltonian.get_node_rank();
-  //PetscMPIInt node_size = sparse_hamiltonian.get_node_size();
+  PetscMPIInt node_size = sparse_hamiltonian.get_node_size();
 
   if(sparse_hamiltonian.get_mpirank() == 0){  
     std::cout << "Hardcore bosons" << std::endl;    
     std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
+    std::cout << "Simulation with " << mpisize << " total MPI processes" << std::endl;
+    std::cout << "Amount of processes user per each node is " << node_size << std::endl;
     std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
     std::cout << "Size of the Hilbert space:" << std::endl;
     std::cout << basis_size << std::endl;
