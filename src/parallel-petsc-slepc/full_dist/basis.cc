@@ -13,7 +13,7 @@ Basis::~Basis()
 /*******************************************************************************/
 // Helper function.
 /*******************************************************************************/
-PetscInt Basis::factorial_(unsigned int n)
+LLInt Basis::factorial_(unsigned int n)
 {
   return (n == 1 || n == 0) ? 1 : factorial_(n - 1) * n;
 }
@@ -26,7 +26,7 @@ PetscInt Basis::factorial_(unsigned int n)
 // igned long long integers. Instead we can use the following expression to
 // compute the size of the system.
 /*******************************************************************************/
-PetscInt Basis::basis_size()
+LLInt Basis::basis_size()
 {
   double size = 1.0;
   for(unsigned int i = 1; i <= (l_ - n_); ++i){
@@ -40,16 +40,16 @@ PetscInt Basis::basis_size()
 // Returns the smallest possible integer that can be expressed with a given
 // binary combination.
 /*******************************************************************************/
-PetscInt Basis::first_int(PetscInt nlocal, PetscInt start, PetscInt end)
+LLInt Basis::first_int(PetscInt nlocal, PetscInt start, PetscInt end)
 {
-  PetscInt first = 0;
+  LLInt first = 0;
   for(unsigned int i = 0; i < n_; ++i){
     first += 1 << i;
   }
 
-  PetscInt w = first;
+  LLInt w = first;
   for(unsigned int i = 0; i < start; ++i){
-    PetscInt t = (first | (first - 1)) + 1;
+    LLInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     first = w;
   }
@@ -64,16 +64,16 @@ PetscInt Basis::first_int(PetscInt nlocal, PetscInt start, PetscInt end)
 // returns an array which contains all possible combinations represented as
 // integer values.
 /*******************************************************************************/
-void Basis::construct_int_basis(PetscInt *int_basis, PetscInt nlocal,
+void Basis::construct_int_basis(LLInt *int_basis, PetscInt nlocal,
     PetscInt start, PetscInt end)
 {
-  PetscInt w;                                         // Next permutation of bits
-  PetscInt first = first_int(nlocal, start, end);
+  LLInt w;                                         // Next permutation of bits
+  LLInt first = first_int(nlocal, start, end);
 
   int_basis[0] = first;
 
   for(unsigned int i = 1; i < nlocal; ++i){
-    PetscInt t = (first | (first - 1)) + 1;
+    LLInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     
     int_basis[i] = w;
@@ -88,7 +88,7 @@ void Basis::construct_int_basis(PetscInt *int_basis, PetscInt nlocal,
 // See Pieterse, et al. (2010) for a reference
 /*******************************************************************************/
 void Basis::construct_bit_basis(boost::dynamic_bitset<> *bit_basis, 
-    PetscInt *int_basis, PetscInt nlocal)
+    LLInt *int_basis, PetscInt nlocal)
 {
   for(unsigned int i = 0; i < nlocal; ++i){
     boost::dynamic_bitset<> bs(l_, int_basis[i]);

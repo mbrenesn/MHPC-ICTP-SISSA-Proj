@@ -8,8 +8,10 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 16;
-  unsigned int n = 8;
+  //PetscLogDouble mem = 0.0;
+
+  unsigned int l = 18;
+  unsigned int n = 9;
   double V = 0.2;
   double t = -1.0;
 
@@ -19,11 +21,29 @@ int main(int argc, char **argv)
   // Invoke the constructor with the basis size. The constructor will initialize PETSc
   // and create an instance of the PETSc MatMPIAIJ matrix type. This will also initialize
   // the MPI environment
+  LLInt basis_size = basis.basis_size();
+  
+  SparseHamiltonian sparse_hamiltonian(basis.basis_size(), l, n, argc, argv);
+
   PetscLogDouble time1, time2;
 
   PetscTime(&time1);
- 
-  SparseHamiltonian sparse_hamiltonian(basis.basis_size(), l, n, argc, argv);
+
+  PetscMPIInt mpirank = sparse_hamiltonian.get_mpirank();
+  PetscMPIInt mpisize = sparse_hamiltonian.get_mpisize();
+
+  if(mpirank == 0){  
+    std::cout << "Hardcore bosons" << std::endl;    
+    std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
+    std::cout << "Simulation with " << mpisize << " total MPI processes" << std::endl;
+    std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
+    std::cout << "Size of the Hilbert space:" << std::endl;
+    std::cout << basis_size << std::endl;
+  }
+
+  //std::cout << "After creating SparseHamiltonian instance" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
 
   // Declare vectors and parameters
   Vec w;
@@ -42,43 +62,31 @@ int main(int argc, char **argv)
   PetscInt start, end;
   VecGetOwnershipRange(v, &start, &end);
 
+
   // Let's construct the int basis that is required to construct the Hamiltonian matrix
   // Each processor creates and holds a section of the integer basis
-  //PetscMPIInt mpirank = sparse_hamiltonian.get_mpirank();
-  //PetscMPIInt mpisize = sparse_hamiltonian.get_mpisize();
-  PetscInt *int_basis = new PetscInt[nlocal];
+  LLInt *int_basis = new LLInt[nlocal];
   basis.construct_int_basis(int_basis, nlocal, start, end);
 
+  //std::cout << "After construction of int basis" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+  
+  //std::cout << "Proc " << mpirank << std::endl;
   //std::cout << "Here's the basis in int notation:" << std::endl;
   //for(unsigned int i=0;i<nlocal;++i) std::cout << int_basis[i] << std::endl;
 
-  // An example of how to populate vectors
-  //PetscComplex z;
-  //for(int ii = start; ii < end; ++ii){
-  //  z = std::complex<double>(ii+1,0); 
-  //  VecSetValues(v, 1, &ii, &z, INSERT_VALUES);
-  //}
+  // Populate the initial vector with either a normalized random initial state or a Neel state
+
+  /*****/
 
   // Random population of the initial vector
-  PetscRandom rctx;
-  PetscRandomCreate(PETSC_COMM_WORLD, &rctx);
-  PetscRandomSetType(rctx, PETSCRAND);
+  //sparse_hamiltonian.random_initial_vec(v);
 
-  PetscRandomSetInterval(rctx, 0.0, 1.0);
-  PetscRandomSeed(rctx);
+  // Neel initial vector
+  sparse_hamiltonian.neel_initial_vec(v, int_basis, nlocal, start);
 
-  VecSetRandom(v, rctx);
-
-  PetscRandomDestroy(&rctx);
-
-  VecAssemblyBegin(v);  
-  VecAssemblyEnd(v);
-
-  // Normalize the initial vector
-  PetscReal norm_initial;
-  VecNorm(v, NORM_2, &norm_initial);
-
-  VecNormalize(v, &norm_initial);
+  /*****/
 
   // Construct a time evolution vector in the same manner as the initial vector
   // was constructed. Values are NOT copied over.
@@ -96,10 +104,14 @@ int main(int argc, char **argv)
   // The int_basis is not required anymore, so let's reclaim some precious memory
   delete [] int_basis;
 
+  //std::cout << "After deletion of int basis" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+
   //sparse_hamiltonian.print_hamiltonian();
  
   // Initial vector
-  //if(sparse_hamiltonian.get_mpirank() == 0){  
+  //if(mpirank == 0){  
   //  std::cout << "Initial state at t = 0" << std::endl;
   //}
   //VecView(v, PETSC_VIEWER_STDOUT_WORLD);
@@ -120,8 +132,12 @@ int main(int argc, char **argv)
   PetscTime(&kryt2);
   /*** End time evolution ***/
 
+  //std::cout << "After time evolution" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+
   // Final vector
-  //if(sparse_hamiltonian.get_mpirank() == 0)  
+  //if(mpirank == 0)  
   //  std::cout << "Final state:" << std::endl;
   //VecView(w, PETSC_VIEWER_STDOUT_WORLD);
 
@@ -130,25 +146,21 @@ int main(int argc, char **argv)
  
   PetscTime(&time2);
 
-  if(sparse_hamiltonian.get_mpirank() == 0){  
-    std::cout << "Hardcore bosons" << std::endl;    
-    std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
-    std::cout << "Parameters: V = " << V << " t = " << t << std::endl;
-    std::cout << "Size of the Hilbert space:" << std::endl;
-    std::cout << basis.basis_size() << std::endl;
+  if(mpirank == 0){  
     std::cout << "L2 norm of the final state vec: " << norm << std::endl; 
     std::cout << "Time Construction: " << constt2 - constt1 << " seconds" << std::endl; 
     std::cout << "Time Krylov Evolution: " << kryt2 - kryt1 << " seconds" << std::endl;
     std::cout << "Number of iterations: " << iterations << std::endl;
-    std::cout << "Times used for evolution: " << std::endl; 
-    std::cout << "Time" << "\t" << "Loschmidt echo" << std::endl;
-    for(unsigned int i = 0; i <= iterations; ++i)
-      std::cout << times[i] << "\t" << loschmidt[i] << std::endl;
     std::cout << "Time total: " << time2 - time1 << " seconds" << std::endl; 
   }
 
   VecDestroy(&v);  
   VecDestroy(&w);
   delete [] loschmidt;
+
+  //std::cout << "At program completion" << std::endl;
+  //PetscMemoryGetCurrentUsage(&mem);
+  //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
+
   return 0;
 }
