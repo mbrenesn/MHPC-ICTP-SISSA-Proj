@@ -155,7 +155,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, LLInt *r
   std::vector<LLInt> st;
   st.reserve(basis_size_ / l_);
 
-  for(int i = 0; i < m; ++i) diag[i] = 1;
+  for(PetscInt i = 0; i < m; ++i) diag[i] = 1;
 
   for(PetscInt state = start; state < end; ++state){
 
