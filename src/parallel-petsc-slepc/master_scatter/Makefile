@@ -2,10 +2,10 @@ default : master.x
 
 include ${SLEPC_DIR}/lib/slepc/conf/slepc_common
 
-CLINKER=mpic++
-CXX=mpic++
+CLINKER=mpicxx
+CXX=mpicxx
 CXXFLAGS= -O3 -DNDEBUG
-LD=mpic++
+LD=mpicxx
 LDFLAGS= -O3 -DNDEBUG
 # Use this for external flags, like the explicit normcheck at each time iteration
 EEFLAGS= #-DNORMCHECK
