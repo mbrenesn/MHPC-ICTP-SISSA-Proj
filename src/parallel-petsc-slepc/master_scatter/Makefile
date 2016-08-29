@@ -23,7 +23,7 @@ main.o : main.cc
 	$(CXX) $(CXXFLAGS) -c $< -fPIC  -Wall -Wwrite-strings -Wno-strict-aliasing -Wno-unknown-pragmas -fvisibility=hidden -I$(SLEPC_DIR)/include -I$(SLEPC_DIR)/$(PETSC_ARCH)/include -I$(PETSC_DIR)/include -I$(PETSC_DIR)/$(PETSC_ARCH)/include -I$(MPI_DIR)/include -I$(BOOST_DIR)
 
 %.o : %.cc
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) -c $< -I$(BOOST_DIR)
 
 wipe : 
 	rm -r *.o *.x
