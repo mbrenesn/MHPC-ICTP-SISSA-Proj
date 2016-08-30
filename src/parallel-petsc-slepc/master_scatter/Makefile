@@ -4,9 +4,9 @@ include ${SLEPC_DIR}/lib/slepc/conf/slepc_common
 
 CLINKER=mpicxx
 CXX=mpicxx
-CXXFLAGS= -O3 -DNDEBUG
+CXXFLAGS=-g -O3 -mavx -DNDEBUG
 LD=mpicxx
-LDFLAGS= -O3 -DNDEBUG
+LDFLAGS=-g -O3 -mavx -DNDEBUG
 # Use this for external flags, like the explicit normcheck at each time iteration
 EEFLAGS= #-DNORMCHECK
 
