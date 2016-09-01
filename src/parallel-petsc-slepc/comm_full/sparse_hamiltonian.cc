@@ -144,6 +144,40 @@ void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt *int_basis, PetscIn
 }
 
 /*******************************************************************************/
+// Pick an initial state of the basis randomly.
+/*******************************************************************************/
+void SparseHamiltonian::random_initial_pick(Vec &initial, LLInt *int_basis, bool wtime, 
+    bool verbose)
+{
+  // This will construct a generator at every call, not really a problem here since 
+  // we only want one random integer out of it
+  boost::random::mt19937 gen;
+
+  if(wtime) gen.seed(static_cast<LLInt>(std::time(0)));
+
+  VecZeroEntries(initial);
+
+  if(mpirank_ == 0){
+    boost::random::uniform_int_distribution<LLInt> dist(0, basis_size_ - 1);
+
+    LLInt pick_ind = dist(gen);
+    
+    if(verbose){
+      std::cout << "Initial state randomly chosen: " << int_basis[pick_ind] << std::endl;
+      std::cout << "With binary representation: " << std::endl;
+      boost::dynamic_bitset<> bs(l_, int_basis[pick_ind]);
+      std::cout << bs << std::endl;
+    }
+
+    VecSetValue(initial, pick_ind, 1.0, INSERT_VALUES);
+  }
+
+  VecAssemblyBegin(initial);
+  VecAssemblyEnd(initial);
+}
+
+
+/*******************************************************************************/
 // Determines the sparsity pattern to allocate memory only for the non-zero 
 // entries of the matrix
 /*******************************************************************************/

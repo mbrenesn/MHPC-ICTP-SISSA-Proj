@@ -4,9 +4,12 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 
 #include <slepcmfn.h>
 
@@ -38,6 +41,7 @@ class SparseHamiltonian
     inline LLInt binsearch(const LLInt *array, LLInt len, LLInt value);
     void random_initial_vec(Vec &initial);
     void neel_initial_vec(Vec &initial, LLInt *int_basis, PetscInt n);
+    void random_initial_pick(Vec &initial, LLInt *int_basis, bool wtime, bool verbose);
     void construct_hamiltonian_matrix(LLInt *int_basis, 
         double V, double t, PetscInt nlocal, PetscInt start, PetscInt end);
     void print_hamiltonian();

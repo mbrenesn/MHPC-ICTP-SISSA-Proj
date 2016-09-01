@@ -52,7 +52,7 @@ int main(int argc, char **argv)
   // Declare vectors and parameters
   Vec w;
   Vec v;
-  double tol = 1.0e-04;
+  double tol = 1.0e-07;
   int maxits = 100000;
 
   // Create the vectors and let PETSc decide the distribution between processes
@@ -99,7 +99,10 @@ int main(int argc, char **argv)
   //sparse_hamiltonian.random_initial_vec(v);
 
   // Neel initial vector
-  sparse_hamiltonian.neel_initial_vec(v, int_basis, basis_local);
+  //sparse_hamiltonian.neel_initial_vec(v, int_basis, basis_local);
+
+  // Pick a state out of the basis randomly
+  sparse_hamiltonian.random_initial_pick(v, int_basis, true, true);
 
   /*****/
 
