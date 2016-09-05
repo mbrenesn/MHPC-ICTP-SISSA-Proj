@@ -29,13 +29,13 @@ int main(int argc, char **argv)
 
   PetscTime(&time1);
  
-  //PetscMPIInt mpirank = sparse_hamiltonian.get_mpirank();
+  PetscMPIInt mpirank = sparse_hamiltonian.get_mpirank();
   PetscMPIInt mpisize = sparse_hamiltonian.get_mpisize();
   
   PetscMPIInt node_rank = sparse_hamiltonian.get_node_rank();
   PetscMPIInt node_size = sparse_hamiltonian.get_node_size();
 
-  if(sparse_hamiltonian.get_mpirank() == 0){  
+  if(mpirank == 0){  
     std::cout << "Hardcore bosons" << std::endl;    
     std::cout << "System has " << l << " sites and " << n << " particles" << std::endl;
     std::cout << "Simulation with " << mpisize << " total MPI processes" << std::endl;
@@ -49,22 +49,12 @@ int main(int argc, char **argv)
   //PetscMemoryGetCurrentUsage(&mem);
   //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
 
-  // Declare vectors and parameters
-  Vec w;
-  Vec v;
-  double tol = 1.0e-07;
-  int maxits = 100000;
+  // Create the parallel distribution of objects.
+  // This distribution is consistent with the distribution PETSc uses, you can for instance
+  // use *GetLocalSize or *GetOwnerShipRange and get the same parallel distribution
+  PetscInt nlocal, start, end;
 
-  // Create the vectors and let PETSc decide the distribution between processes
-  VecCreate(PETSC_COMM_WORLD, &v);
-  VecSetSizes(v, PETSC_DECIDE, basis_size);
-  VecSetType(v, VECMPI);
- 
-  // An example of the RHS vector to test solutions.
-  PetscInt nlocal;
-  VecGetLocalSize(v, &nlocal);
-  PetscInt start, end;
-  VecGetOwnershipRange(v, &start, &end);
+  sparse_hamiltonian.distribution(nlocal, start, end);
 
   // Let's construct the int basis that is required to construct the Hamiltonian matrix
   // Each processor creates and holds a section of the integer basis, except rank 0
@@ -91,28 +81,17 @@ int main(int argc, char **argv)
   //std::cout << "Here's the basis in int notation:" << std::endl;
   //for(unsigned int i=0;i<basis_local;++i) std::cout << int_basis[i] << std::endl;
 
-  // Populate the initial vector with either a normalized random initial state or a Neel state
+  // Get the information required to populate the initial vector before destroying the basis 
 
-  /*****/
+  // Neel initial index
+  //LLInt neel_index;
+  //sparse_hamiltonian.get_neel_index(neel_index, int_basis, basis_local);
 
-  // Random population of the initial vector
-  //sparse_hamiltonian.random_initial_vec(v);
-
-  // Neel initial vector
-  //sparse_hamiltonian.neel_initial_vec(v, int_basis, basis_local);
-
-  // Pick a state out of the basis randomly
-  sparse_hamiltonian.random_initial_pick(v, int_basis, true, true);
-
-  /*****/
-
-  // Construct a time evolution vector in the same manner as the initial vector
-  // was constructed. Values are NOT copied over.
-  VecDuplicate(v, &w);
-
-  // We let PETSc decide the distribution among processes, let's pass this to the
-  // construct_hamiltonian_matrix method so we create a Hamiltonian matrix with
-  // the same distribution. This will make the operations compatible among processors
+  // Initial random pick out of the basis
+  LLInt random_pick;
+  sparse_hamiltonian.get_random_initial_pick(random_pick, int_basis, true, true);
+  
+  // We construct the Hamiltonian matrix using the above distribution
   PetscLogDouble constt1, constt2;
 
   PetscTime(&constt1);
@@ -126,6 +105,32 @@ int main(int argc, char **argv)
   //PetscMemoryGetCurrentUsage(&mem);
   //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
   
+  // Declare vectors and parameters
+  Vec w;
+  Vec v;
+  double tol = 1.0e-07;
+  int maxits = 100000;
+ 
+  /***/
+
+  //Populate the initial vector
+  VecCreate(PETSC_COMM_WORLD, &v);
+  VecSetSizes(v, nlocal, basis_size);
+  VecSetType(v, VECMPI);
+
+  VecDuplicate(v, &w);
+  
+  // Random population of the initial vector
+  //sparse_hamiltonian.random_initial_vec(v);
+  
+  // Neel initial vector
+  //sparse_hamiltonian.neel_initial_vec(v, neel_index);
+
+  // A state out of the basis at random
+  sparse_hamiltonian.random_initial_basis_vec(v, random_pick);
+
+  /***/
+
   //sparse_hamiltonian.print_hamiltonian();
  
   // Initial vector
@@ -154,7 +159,7 @@ int main(int argc, char **argv)
   //PetscMemoryGetCurrentUsage(&mem);
   //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
   
-// Final vector
+  // Final vector
   //if(sparse_hamiltonian.get_mpirank() == 0)  
   //  std::cout << "Final state:" << std::endl;
   //VecView(w, PETSC_VIEWER_STDOUT_WORLD);

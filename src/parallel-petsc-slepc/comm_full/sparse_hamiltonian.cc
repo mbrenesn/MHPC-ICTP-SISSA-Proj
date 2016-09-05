@@ -49,6 +49,24 @@ PetscMPIInt SparseHamiltonian::get_node_rank()
   return node_rank_;
 }
 
+/*******************************************************************************/
+// Determines the distribution among processes without relying on PETSc routines
+// This is done to avoid allocation of PETSc objects before they are required,
+// therefore saving memory
+/*******************************************************************************/
+void SparseHamiltonian::distribution(PetscInt &nlocal, PetscInt &start, PetscInt &end)
+{
+  nlocal = basis_size_ / mpisize_;
+  PetscInt rest = basis_size_ % mpisize_;
+
+  if(rest && (mpirank_ < rest)) nlocal++;
+
+  start = mpirank_ * nlocal;
+  if(rest && (mpirank_ >= rest)) start += rest;
+
+  end = start + nlocal;
+}
+
 inline
 LLInt SparseHamiltonian::binary_to_int(boost::dynamic_bitset<> bs)
 {
@@ -116,9 +134,9 @@ void SparseHamiltonian::random_initial_vec(Vec &initial)
 }
 
 /*******************************************************************************/
-// Initial Neel state vector.
+// Initial Neel state index.
 /*******************************************************************************/
-void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt *int_basis, PetscInt n)
+void SparseHamiltonian::get_neel_index(LLInt &index, LLInt *int_basis, PetscInt n)
 {
   if(l_ / 2 != n_){
     std::cerr << "Not implemented!" << std::endl;
@@ -131,22 +149,16 @@ void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt *int_basis, PetscIn
     neel.set(site);
   }
 
-  VecZeroEntries(initial);
-
   if(mpirank_ == 0){
     LLInt neel_int = binary_to_int(neel);
-    LLInt index = binsearch(int_basis, n, neel_int);
-    VecSetValue(initial, index, 1.0, INSERT_VALUES);
+    index = binsearch(int_basis, n, neel_int);
   }
-
-  VecAssemblyBegin(initial);
-  VecAssemblyEnd(initial);
 }
 
 /*******************************************************************************/
 // Pick an initial state of the basis randomly.
 /*******************************************************************************/
-void SparseHamiltonian::random_initial_pick(Vec &initial, LLInt *int_basis, bool wtime, 
+void SparseHamiltonian::get_random_initial_pick(LLInt &pick_ind, LLInt *int_basis, bool wtime, 
     bool verbose)
 {
   // This will construct a generator at every call, not really a problem here since 
@@ -155,12 +167,10 @@ void SparseHamiltonian::random_initial_pick(Vec &initial, LLInt *int_basis, bool
 
   if(wtime) gen.seed(static_cast<LLInt>(std::time(0)));
 
-  VecZeroEntries(initial);
-
   if(mpirank_ == 0){
     boost::random::uniform_int_distribution<LLInt> dist(0, basis_size_ - 1);
 
-    LLInt pick_ind = dist(gen);
+    pick_ind = dist(gen);
     
     if(verbose){
       std::cout << "Initial state randomly chosen: " << int_basis[pick_ind] << std::endl;
@@ -168,14 +178,34 @@ void SparseHamiltonian::random_initial_pick(Vec &initial, LLInt *int_basis, bool
       boost::dynamic_bitset<> bs(l_, int_basis[pick_ind]);
       std::cout << bs << std::endl;
     }
-
-    VecSetValue(initial, pick_ind, 1.0, INSERT_VALUES);
   }
+}
+
+/*******************************************************************************/
+// Initial Neel state vector.
+/*******************************************************************************/
+void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt neel_index)
+{
+  VecZeroEntries(initial);
+
+  if(mpirank_ == 0) VecSetValue(initial, neel_index, 1.0, INSERT_VALUES);
 
   VecAssemblyBegin(initial);
   VecAssemblyEnd(initial);
 }
 
+/*******************************************************************************/
+// Initial random vector out of the basis.
+/*******************************************************************************/
+void SparseHamiltonian::random_initial_basis_vec(Vec &initial, LLInt random_pick)
+{
+  VecZeroEntries(initial);
+
+  if(mpirank_ == 0) VecSetValue(initial, random_pick, 1.0, INSERT_VALUES);
+
+  VecAssemblyBegin(initial);
+  VecAssemblyEnd(initial);
+}
 
 /*******************************************************************************/
 // Determines the sparsity pattern to allocate memory only for the non-zero 

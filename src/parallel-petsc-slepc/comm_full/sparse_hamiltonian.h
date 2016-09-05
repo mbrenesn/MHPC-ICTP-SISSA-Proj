@@ -37,11 +37,14 @@ class SparseHamiltonian
     PetscMPIInt get_mpirank();
     PetscMPIInt get_node_size();
     PetscMPIInt get_node_rank();
+    void distribution(PetscInt &nlocal, PetscInt &start, PetscInt &end);
     inline LLInt binary_to_int(boost::dynamic_bitset<> bs);
     inline LLInt binsearch(const LLInt *array, LLInt len, LLInt value);
     void random_initial_vec(Vec &initial);
-    void neel_initial_vec(Vec &initial, LLInt *int_basis, PetscInt n);
-    void random_initial_pick(Vec &initial, LLInt *int_basis, bool wtime, bool verbose);
+    void get_neel_index(LLInt &index, LLInt *int_basis, PetscInt n);
+    void get_random_initial_pick(LLInt &pick_ind, LLInt *int_basis, bool wtime, bool verbose);
+    void neel_initial_vec(Vec &initial, LLInt neel_index);
+    void random_initial_basis_vec(Vec &initial, LLInt random_pick);
     void construct_hamiltonian_matrix(LLInt *int_basis, 
         double V, double t, PetscInt nlocal, PetscInt start, PetscInt end);
     void print_hamiltonian();
