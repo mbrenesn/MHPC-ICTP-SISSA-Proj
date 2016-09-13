@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 {
   //PetscLogDouble mem = 0.0;
 
-  unsigned int l = 6;
-  unsigned int n = 3;
+  unsigned int l = 18;
+  unsigned int n = 9;
   double V = 0.2;
   double t = -1.0;
 

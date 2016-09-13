@@ -346,13 +346,10 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
   LLInt cont_size = cont.size();
 
   for(PetscMPIInt exc = 0; exc < mpisize_ - 1; ++exc){
-  
-    MPI_Sendrecv(&basis_help[0], basis_help_size, MPI_LONG_LONG, next, 0,
-      &basis_help[0], basis_help_size, MPI_LONG_LONG, prec, 0, PETSC_COMM_WORLD,
-        MPI_STATUS_IGNORE);
+ 
+    MPI_Sendrecv_replace(&basis_help[0], basis_help_size, MPI_LONG_LONG, next, 0,
+      prec, 0, PETSC_COMM_WORLD, MPI_STATUS_IGNORE);
 
-    MPI_Barrier(PETSC_COMM_WORLD);
-    
     PetscMPIInt source = mod_((prec - exc), mpisize_);
     for(LLInt i = 0; i < cont_size; ++i){
       if(cont[i] > 0){
@@ -363,8 +360,6 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
           cont[i] = -1ULL * (m_ind + start_inds[source]);
         }
       }
-    
-    MPI_Barrier(PETSC_COMM_WORLD);
     }
   }
   
