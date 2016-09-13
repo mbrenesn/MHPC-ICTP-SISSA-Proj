@@ -335,7 +335,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, LLInt *r
       MPI_Recv(&cont[0], recv_sizes[i - 1], MPI_LONG_LONG, i, i, node_comm_,
         &stat);
     
-      for(unsigned int ii = 0; ii < rsize; ++ii){ 
+      for(LLInt ii = 0; ii < rsize; ++ii){ 
         LLInt m_ind = binsearch(int_basis, basis_size_, cont[ii]);
         cont[ii] = m_ind;
       }
@@ -347,7 +347,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, LLInt *r
 
   // Now cont contains the missing indices
   if(node_rank_){
-    for(unsigned int in = 0; in < cont.size(); ++in){
+    for(ULLInt in = 0; in < cont.size(); ++in){
       LLInt st_c = st[in];
       if(cont[in] < end && cont[in] >= start) diag[st_c - start]++;
       else off[st_c - start]++;
@@ -516,7 +516,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
       MPI_Recv(&cont[0], recv_sizes[i - 1], MPI_LONG_LONG, i, i, node_comm_,
         &stat);
     
-      for(unsigned int ii = 0; ii < rsize; ++ii){ 
+      for(LLInt ii = 0; ii < rsize; ++ii){ 
         LLInt m_ind = binsearch(int_basis, basis_size_, cont[ii]);
         cont[ii] = m_ind;
       }
@@ -528,7 +528,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
 
   // Now cont contains the missing indices
   if(node_rank_){
-    for(unsigned int in = 0; in < cont.size(); ++in){
+    for(ULLInt in = 0; in < cont.size(); ++in){
       LLInt st_c = st[in];
       LLInt cont_c = cont[in];
       MatSetValues(ham_mat_, 1, &cont_c, 1, &st_c, &ti, ADD_VALUES);

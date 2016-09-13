@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 {
   //PetscLogDouble mem = 0.0;
 
-  unsigned int l = 18;
-  unsigned int n = 9;
+  unsigned int l = 26;
+  unsigned int n = 13;
   double V = 0.2;
   double t = -1.0;
 
@@ -84,12 +84,12 @@ int main(int argc, char **argv)
   // Get the information required to populate the initial vector before destroying the basis 
 
   // Neel initial index
-  //LLInt neel_index;
-  //sparse_hamiltonian.get_neel_index(neel_index, int_basis, basis_local);
+  LLInt neel_index;
+  sparse_hamiltonian.get_neel_index(neel_index, int_basis, basis_local);
 
   // Initial random pick out of the basis
-  LLInt random_pick;
-  sparse_hamiltonian.get_random_initial_pick(random_pick, int_basis, true, true);
+  //LLInt random_pick;
+  //sparse_hamiltonian.get_random_initial_pick(random_pick, int_basis, true, true);
   
   // We construct the Hamiltonian matrix using the above distribution
   PetscLogDouble constt1, constt2;
@@ -124,10 +124,10 @@ int main(int argc, char **argv)
   //sparse_hamiltonian.random_initial_vec(v);
   
   // Neel initial vector
-  //sparse_hamiltonian.neel_initial_vec(v, neel_index);
+  sparse_hamiltonian.neel_initial_vec(v, neel_index);
 
   // A state out of the basis at random
-  sparse_hamiltonian.random_initial_basis_vec(v, random_pick);
+  //sparse_hamiltonian.random_initial_basis_vec(v, random_pick);
 
   /***/
 
