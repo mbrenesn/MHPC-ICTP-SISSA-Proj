@@ -29,7 +29,7 @@ LLInt Basis::factorial_(unsigned int n)
 LLInt Basis::basis_size()
 {
   double size = 1.0;
-  for(unsigned int i = 1; i <= (l_ - n_); ++i){
+  for(LLInt i = 1; i <= (l_ - n_); ++i){
     size *= (static_cast<double> (i + n_) / static_cast<double> (i));  
   }
 
@@ -43,12 +43,12 @@ LLInt Basis::basis_size()
 LLInt Basis::first_int(PetscInt nlocal, PetscInt start)
 {
   LLInt first = 0;
-  for(unsigned int i = 0; i < n_; ++i){
+  for(LLInt i = 0; i < n_; ++i){
     first += 1 << i;
   }
 
   LLInt w = first;
-  for(unsigned int i = 0; i < start; ++i){
+  for(LLInt i = 0; i < start; ++i){
     LLInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     first = w;
@@ -72,7 +72,7 @@ void Basis::construct_int_basis(LLInt *int_basis, PetscInt nlocal,
 
   int_basis[0] = first;
 
-  for(unsigned int i = 1; i < nlocal; ++i){
+  for(LLInt i = 1; i < nlocal; ++i){
     LLInt t = (first | (first - 1)) + 1;
     w = t | ((((t & -t) / (first & -first)) >> 1) - 1);
     

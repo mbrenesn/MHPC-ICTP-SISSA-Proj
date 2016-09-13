@@ -510,7 +510,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
   }
 
   // Now cont contains the missing indices
-  for(unsigned int in = 0; in < cont.size(); ++in){
+  for(ULLInt in = 0; in < cont.size(); ++in){
     LLInt st_c = st[in];
     LLInt cont_c = cont[in];
     MatSetValues(ham_mat_, 1, &cont_c, 1, &st_c, &ti, ADD_VALUES);
