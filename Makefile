@@ -25,8 +25,13 @@ comm_node:
 	$(MAKE) -C src/parallel-petsc-slepc/comm_full/
 	mv src/parallel-petsc-slepc/comm_full/comm_node.x .
 
+dist_comm:
+	$(MAKE) -C src/parallel-petsc-slepc/dist_comm/
+	mv src/parallel-petsc-slepc/dist_comm/dist_comm.x .
+
 clean:
 	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/dist_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/comm_full/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/single_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/master_scatter/ clean
