@@ -179,13 +179,15 @@ void SparseHamiltonian::get_random_initial_pick(LLInt &pick_ind, LLInt *int_basi
     pick_ind = dist(gen);    
   }
 
+  MPI_Bcast(&pick_ind, 1, MPI_LONG_LONG, 0, PETSC_COMM_WORLD);
+
   bool check = false;
   if(pick_ind >= start && pick_ind < end) check = true;
 
   if(verbose && check){
-    std::cout << "Initial state randomly chosen: " << int_basis[pick_ind] << std::endl;
+    std::cout << "Initial state randomly chosen: " << int_basis[pick_ind - start] << std::endl;
     std::cout << "With binary representation: " << std::endl;
-    boost::dynamic_bitset<> bs(l_, int_basis[pick_ind]);
+    boost::dynamic_bitset<> bs(l_, int_basis[pick_ind - start]);
     std::cout << bs << std::endl;
   }
 }
