@@ -27,8 +27,9 @@ class SparseHamiltonian
     PetscMPIInt mpirank_, mpisize_, node_rank_, node_size_;
     MFN mfn_;
     FN f_;
-    void determine_allocation_details_(LLInt *int_basis, LLInt *recv_sizes, 
-        const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off);
+    void determine_allocation_details_(LLInt *int_basis, 
+        std::vector<LLInt> &cont, std::vector<LLInt> &st, LLInt *recv_sizes, 
+            const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off);
   public:
     SparseHamiltonian(LLInt basis_size, unsigned int l, unsigned int n, 
         int argc, char **argv);

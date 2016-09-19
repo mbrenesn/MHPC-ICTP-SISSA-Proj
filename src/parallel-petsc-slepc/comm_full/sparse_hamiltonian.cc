@@ -192,6 +192,11 @@ void SparseHamiltonian::neel_initial_vec(Vec &initial, LLInt neel_index)
 
   VecAssemblyBegin(initial);
   VecAssemblyEnd(initial);
+
+  if(mpirank_ == 0){
+    std::cout << "Initial state chosen is the Neel state" << std::endl;
+    std::cout << "...0101" << std::endl;
+  }
 }
 
 /*******************************************************************************/
@@ -211,14 +216,10 @@ void SparseHamiltonian::random_initial_basis_vec(Vec &initial, LLInt random_pick
 // Determines the sparsity pattern to allocate memory only for the non-zero 
 // entries of the matrix
 /*******************************************************************************/
-void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, LLInt *recv_sizes, 
-    const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off)
+void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis, 
+    std::vector<LLInt> &cont, std::vector<LLInt> &st, LLInt *recv_sizes, 
+        const PetscInt m, PetscInt start, PetscInt end, PetscInt *diag, PetscInt *off)
 {
-  std::vector<LLInt> cont;
-  cont.reserve(basis_size_ / l_);
-  std::vector<LLInt> st;
-  st.reserve(basis_size_ / l_);
-
   for(PetscInt i = 0; i < m; ++i) diag[i] = 1;
 
   for(PetscInt state = start; state < end; ++state){
@@ -384,7 +385,13 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
   LLInt *recv_sizes = NULL;
   if(node_rank_ == 0) recv_sizes = new LLInt[node_size_ - 1];
 
-  this->determine_allocation_details_(int_basis, recv_sizes, nlocal, start, end, d_nnz, o_nnz);
+  std::vector<LLInt> cont;
+  cont.reserve(basis_size_ / l_);
+  std::vector<LLInt> st;
+  st.reserve(basis_size_ / l_);
+ 
+  this->determine_allocation_details_(int_basis, cont, st, recv_sizes, nlocal, start, end, 
+    d_nnz, o_nnz);
 
   // Create the Hamiltonian matrix
   MatCreate(PETSC_COMM_WORLD, &ham_mat_);
@@ -396,11 +403,6 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
   PetscFree(d_nnz);
   PetscFree(o_nnz);
 
-  std::vector<LLInt> cont;
-  cont.reserve(basis_size_ / l_);
-  std::vector<LLInt> st;
-  st.reserve(basis_size_ / l_);
- 
   // Hamiltonian matrix construction
   PetscComplex Vi = V * PETSC_i;
   PetscComplex ti = t * PETSC_i;
@@ -439,8 +441,6 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
           if(node_rank_){
             match_ind1 = binsearch(int_basis, nlocal, new_int1); 
             if(match_ind1 == -1){
-              cont.push_back(new_int1);
-              st.push_back(state);
               continue;
             }
             else{
@@ -475,8 +475,6 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
           if(node_rank_){
             match_ind0 = binsearch(int_basis, nlocal, new_int0); 
             if(match_ind0 == -1){
-              cont.push_back(new_int0);
-              st.push_back(state);
               continue;
             }
             else{
@@ -503,30 +501,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
     }
   }
 
-  // Communication to rank 0 of each node to find missing indices
-  if(node_rank_){
-    MPI_Send(&cont[0], cont.size(), MPI_LONG_LONG, 0, node_rank_, node_comm_);
-    MPI_Recv(&cont[0], cont.size(), MPI_LONG_LONG, 0, 0, node_comm_, MPI_STATUS_IGNORE);
-  }
-  else{
-    for(PetscMPIInt i = 1; i < node_size_; ++i){
-      MPI_Status stat;
-      LLInt rsize = recv_sizes[i - 1];
-      cont.resize(rsize);
-      MPI_Recv(&cont[0], recv_sizes[i - 1], MPI_LONG_LONG, i, i, node_comm_,
-        &stat);
-    
-      for(LLInt ii = 0; ii < rsize; ++ii){ 
-        LLInt m_ind = binsearch(int_basis, basis_size_, cont[ii]);
-        cont[ii] = m_ind;
-      }
-
-      MPI_Send(&cont[0], recv_sizes[i - 1], MPI_LONG_LONG, stat.MPI_SOURCE, 0, node_comm_);
-      cont.erase(cont.begin(), cont.end());
-    }
-  }
-
-  // Now cont contains the missing indices
+  // Cont already contains the missing indices
   if(node_rank_){
     for(ULLInt in = 0; in < cont.size(); ++in){
       LLInt st_c = st[in];
