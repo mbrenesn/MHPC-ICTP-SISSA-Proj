@@ -26,6 +26,7 @@ SparseHamiltonian::SparseHamiltonian(LLInt basis_size, unsigned int l,
 SparseHamiltonian::~SparseHamiltonian()
 {
   MatDestroy(&ham_mat_);
+  MPI_Comm_free(&node_comm_);
   SlepcFinalize();
 }
 
