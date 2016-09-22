@@ -29,8 +29,13 @@ dist_comm:
 	$(MAKE) -C src/parallel-petsc-slepc/dist_comm/
 	mv src/parallel-petsc-slepc/dist_comm/dist_comm.x .
 
+node_dist:
+	$(MAKE) -C src/parallel-petsc-slepc/node_dist_comm/
+	mv src/parallel-petsc-slepc/node_dist_comm/node_dist.x .
+
 clean:
 	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/node_dist_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/dist_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/comm_full/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/single_comm/ clean
