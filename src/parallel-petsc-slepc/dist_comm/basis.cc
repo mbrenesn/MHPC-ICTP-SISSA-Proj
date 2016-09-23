@@ -90,7 +90,7 @@ void Basis::construct_int_basis(LLInt *int_basis, PetscInt nlocal,
 void Basis::construct_bit_basis(boost::dynamic_bitset<> *bit_basis, 
     LLInt *int_basis, PetscInt nlocal)
 {
-  for(unsigned int i = 0; i < nlocal; ++i){
+  for(LLInt i = 0; i < nlocal; ++i){
     boost::dynamic_bitset<> bs(l_, int_basis[i]);
     bit_basis[i] = bs;
   }
