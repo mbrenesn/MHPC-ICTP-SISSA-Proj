@@ -22,9 +22,9 @@ int main(int argc, char **argv)
   // and create an instance of the PETSc MatMPIAIJ matrix type. This will also initialize
   // the MPI environment
   LLInt basis_size = basis.basis_size();
-  
+
   SparseHamiltonian sparse_hamiltonian(basis_size, l, n, argc, argv);
-  
+ 
   PetscLogDouble time1, time2;
 
   PetscTime(&time1);
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   //std::cout << "After construction of int basis" << std::endl;
   //PetscMemoryGetCurrentUsage(&mem);
   //std::cout << "Process memory " << mem / (1024 * 1024) << " MB" << std::endl;
-
+  
   //std::cout << "Proc " << mpirank << std::endl;
   //std::cout << "Here's the basis in int notation:" << std::endl;
   //for(unsigned int i=0;i<basis_local;++i) std::cout << int_basis[i] << std::endl;
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   // Initial random pick out of the basis
   //LLInt random_pick;
   //sparse_hamiltonian.get_random_initial_pick(random_pick, int_basis, start, end,  true, true);
-  
+ 
   // We construct the Hamiltonian matrix using the above distribution
   PetscLogDouble constt1, constt2;
 

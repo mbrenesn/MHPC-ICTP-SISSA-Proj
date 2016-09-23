@@ -372,7 +372,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
 
   PetscInt nodes = ((mpisize_ - 1) / node_size_) + 1;
   int *ranks = new int[nodes];
-  for(int i = 0; i < nodes; ++i) ranks[i] = 0;
+  for(int i = 0; i < nodes; ++i) ranks[i] = node_size_ * i;
 
   MPI_Group zero_of_node_group;
   MPI_Group_incl(petsc_group, nodes, ranks, &zero_of_node_group);
@@ -387,7 +387,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
     MPI_Allgather(&node_start, 1, MPI_LONG_LONG, start_node_inds, 1, MPI_LONG_LONG, 
       zeronode_comm);
   }
-
+   
   // Proc 0 is always gonna have the larger section of the distribution (when rest is present)
   // so let's use this value as the size of the basis_help buffer
   LLInt basis_help_size;
@@ -423,14 +423,14 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
 
   // Communication to rank 0 of each node to find missing indices and ring exchange
   PetscMPIInt zerosize = -1, zerorank = -1, next = -1, prec = -1;
-  if(node_rank_ == 0){
+  if(zeronode_comm != MPI_COMM_NULL){
     MPI_Comm_size(zeronode_comm, &zerosize);
     MPI_Comm_rank(zeronode_comm, &zerorank);
     
     next = (zerorank + 1) % zerosize;
     prec = (zerorank + zerosize - 1) % zerosize;
   }
-
+      
   MPI_Bcast(&zerosize, 1, MPI_INT, 0, node_comm_);
 
   if(node_rank_){
@@ -440,14 +440,13 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
     }
   }
   else{
-    std::vector<LLInt> cont_help;
-    cont_help.reserve(basis_size_ / l_);
+    std::vector<LLInt> cont_help = cont;
   
     for(PetscMPIInt exc = 0; exc < zerosize; ++exc){
     
       MPI_Sendrecv_replace(&basis_help[0], basis_help_size, MPI_LONG_LONG, next, 0,
         prec, 0, zeronode_comm, MPI_STATUS_IGNORE);
-
+    
       PetscMPIInt source = mod_((prec - exc), zerosize);
       // Check your own data first
       for(LLInt i = 0; i < cont_size; ++i){
@@ -460,7 +459,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
           }
         }
       }
-
+      
       // Check the data of the rest of the node
       for(PetscMPIInt i = 1; i < node_size_; ++i){
         MPI_Status stat;
@@ -468,7 +467,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
         cont_help.resize(rsize);
         MPI_Recv(&cont_help[0], recv_sizes[i], MPI_LONG_LONG, i, i, node_comm_,
           &stat);
-    
+      
         for(LLInt ii = 0; ii < rsize; ++ii){
           if(cont_help[ii] > 0){
             LLInt m_ind = binsearch(basis_help, basis_help_size, cont_help[ii]);
@@ -481,16 +480,13 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
         }
 
         MPI_Send(&cont_help[0], recv_sizes[i], MPI_LONG_LONG, stat.MPI_SOURCE, 0, node_comm_);
-        cont_help.erase(cont.begin(), cont.end());
+        //cont_help.erase(cont.begin(), cont.end());
       }
     }
   }
 
   // Flip the signs
   for(PetscInt i = 0; i < cont_size; ++i) cont[i] = -1ULL * cont[i];
-
-  //std::cout << "Proc " << mpirank_ << std::endl;
-  //for(ULLInt i=0; i<cont.size();++i) std::cout << cont[i] << std::endl;
 
   // Now cont contains the missing indices
   for(ULLInt in = 0; in < cont.size(); ++in){
@@ -517,7 +513,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
   for(int j = 0; j < m; ++j){
     std::cout << off[j] << std::endl;
   }
-  */
+  */ 
 }
 
 /*******************************************************************************/
