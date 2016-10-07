@@ -410,9 +410,9 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
   PetscCalloc1(nlocal, &o_nnz);
   
   std::vector<LLInt> cont;
-  cont.reserve(basis_size_ / l_);
+  cont.reserve(basis_size_ / (node_size_ + n_));
   std::vector<LLInt> st;
-  st.reserve(basis_size_ / l_);
+  st.reserve(basis_size_ / (node_size_ + n_));
 
   this->determine_allocation_details_(int_basis, cont, st, nlocal, start, end, d_nnz, o_nnz);
 
