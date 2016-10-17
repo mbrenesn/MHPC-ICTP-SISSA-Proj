@@ -47,7 +47,8 @@ class SparseHamiltonian
     void neel_initial_vec(Vec &initial, LLInt neel_index);
     void random_initial_basis_vec(Vec &initial, LLInt random_pick);
     void construct_hamiltonian_matrix(LLInt *int_basis, 
-        double V, double t, PetscInt nlocal, PetscInt start, PetscInt end);
+        double V, double t, double h, double beta, PetscInt nlocal, PetscInt start, 
+            PetscInt end);
     void print_hamiltonian();
     void expv_krylov_solve(const double tv, const double tol, const int maxits, Vec &w, Vec &v);
     void time_evolution(const unsigned int iterations, const double *times, 

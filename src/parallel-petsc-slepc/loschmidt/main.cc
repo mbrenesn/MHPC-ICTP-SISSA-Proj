@@ -8,10 +8,12 @@
 
 int main(int argc, char **argv)
 {
-  unsigned int l = 26;
-  unsigned int n = 13;
+  unsigned int l = 18;
+  unsigned int n = 9;
   double V = 0.2;
   double t = -1.0;
+  double h = 1.0;
+  double beta = 5.0 / 8.0;
 
   Basis basis(l,n);
   // Sparse hamiltonian testing zone
@@ -77,7 +79,7 @@ int main(int argc, char **argv)
   PetscLogDouble constt1, constt2;
 
   PetscTime(&constt1);
-  sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,nlocal,start,end);
+  sparse_hamiltonian.construct_hamiltonian_matrix(int_basis,V,t,h,beta,nlocal,start,end);
   PetscTime(&constt2);
 
   // The int_basis is not required anymore, so let's reclaim some precious memory
@@ -90,6 +92,8 @@ int main(int argc, char **argv)
   int maxits = 100000;
  
   /***/
+
+  //sparse_hamiltonian.print_hamiltonian();
 
   //Populate the initial vector
   VecCreate(PETSC_COMM_WORLD, &v);
@@ -108,9 +112,9 @@ int main(int argc, char **argv)
   /*** Time evolution ***/
   PetscTime(&kryt1);
  
-  const int iterations = 20;
+  const int iterations = 36;
   double times[iterations + 1] 
-      = {0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,10,20,30,40,50,60,70,80,90,100};
+      = {0.0,0.0001,0.0005,0.001,0.005,0.01,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,5.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0,60.0,65.0,70.0,75.0,80.0,85.0,90.0,95.0,100.0};
   
   double *loschmidt = new double[iterations + 1]; 
 

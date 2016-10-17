@@ -310,7 +310,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
       }    
     }
   
-    if(counter == false) diag[state - start]--;
+    //if(counter == false) diag[state - start]--;
   }
 
   // Communication to rank 0 of every node to find size of buffers
@@ -373,7 +373,7 @@ void SparseHamiltonian::determine_allocation_details_(LLInt *int_basis,
 // Computes the Hamiltonian matrix given by means of the integer basis
 /*******************************************************************************/
 void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis, 
-    double V, double t, PetscInt nlocal, PetscInt start, PetscInt end)
+    double V, double t, double h, double beta, PetscInt nlocal, PetscInt start, PetscInt end)
 {
   // Preallocation. For this we need a hint on how many non-zero entries the matrix will
   // have in the diagonal submatrix and the offdiagonal submatrices for each process
@@ -407,6 +407,7 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
   // Hamiltonian matrix construction
   PetscComplex Vi = V * PETSC_i;
   PetscComplex ti = t * PETSC_i;
+  const double pi = boost::math::constants::pi<double>();
 
   // Grab 1 of the states and turn it into bit representation
   for(PetscInt state = start; state < end; ++state){
@@ -423,6 +424,11 @@ void SparseHamiltonian::construct_hamiltonian_matrix(LLInt *int_basis,
       
       // Case 1: There's a particle in this site
       if(bitset[site] == 1){
+        
+        double osc_term = cos(2 * pi * beta * site); 
+        PetscComplex osc_term_i = osc_term * PETSC_i;
+        MatSetValues(ham_mat_, 1, &state, 1, &state, &osc_term_i, ADD_VALUES);
+        
         int next_site1 = (site + 1) % l_;
 
         // If there's a particle in next site, do nothing
