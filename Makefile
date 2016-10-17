@@ -33,8 +33,13 @@ node_dist:
 	$(MAKE) -C src/parallel-petsc-slepc/node_dist_comm/
 	mv src/parallel-petsc-slepc/node_dist_comm/node_dist.x .
 
+loschmidt:
+	$(MAKE) -C src/parallel-petsc-slepc/loschmidt/
+	mv src/parallel-petsc-slepc/loschmidt/loschmidt.x .
+
 clean:
 	$(MAKE) -C src/serial-boost/ clean
+	$(MAKE) -C src/parallel-petsc-slepc/loschmidt/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/node_dist_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/dist_comm/ clean
 	$(MAKE) -C src/parallel-petsc-slepc/comm_full/ clean
